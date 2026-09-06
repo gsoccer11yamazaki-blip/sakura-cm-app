@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JLPT N3 模擬試験 — Build Bridge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --color-primary: #2563EB;
+      --color-success: #16A34A;
+      --color-danger: #DC2626;
+      --color-warning: #D97706;
+      --color-bg: #F8FAFC;
+      --color-card: #FFFFFF;
+      --color-text: #1E293B;
+      --color-muted: #64748B;
+      --color-border: #E2E8F0;
+      --radius: 12px;
+      --max-w: 640px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .app { max-width: var(--max-w); margin: 0 auto; min-height: 100vh; position: relative; }
+    .screen { display: none; padding: 20px 16px 32px; }
+    .screen.active { display: block; }
+    .warn-banner {
+      display: none; background: #FEF3C7; color: #92400E;
+      padding: 10px 16px; font-size: 14px; border-bottom: 1px solid #FCD34D;
+    }
+    .warn-banner.show { display: block; }
+    .loading-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(248, 250, 252, 0.92); z-index: 200;
+      flex-direction: column; align-items: center; justify-content: center; gap: 16px;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid var(--color-border);
+      border-top-color: var(--color-primary); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(15, 23, 42, 0.45); z-index: 150;
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-backdrop.show { display: flex; }
+    .modal {
+      background: var(--color-card); border-radius: var(--radius);
+      padding: 24px; max-width: 360px; width: 100%;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    .modal p { margin-bottom: 20px; font-size: 15px; }
+    .modal button {
+      width: 100%; padding: 12px; background: var(--color-primary);
+      color: #fff; border: none; border-radius: 8px;
+      font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    .start-title { font-size: 1.5rem; font-weight: 700; text-align: center; margin-bottom: 24px; }
+    .exam-table {
+      width: 100%; border-collapse: collapse; background: var(--color-card);
+      border-radius: var(--radius); overflow: hidden;
+      border: 1px solid var(--color-border); margin-bottom: 20px; font-size: 14px;
+    }
+    .exam-table th, .exam-table td {
+      padding: 12px 14px; border-bottom: 1px solid var(--color-border); text-align: left;
+    }
+    .exam-table th { background: #F1F5F9; font-weight: 600; }
+    .exam-table tr:last-child td { border-bottom: none; font-weight: 700; }
+    .info-box {
+      background: var(--color-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 24px;
+      font-size: 14px; color: var(--color-muted);
+    }
+    .info-box strong { color: var(--color-text); }
+    .btn-primary {
+      width: 100%; padding: 16px; background: var(--color-primary); color: #fff;
+      border: none; border-radius: var(--radius);
+      font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer;
+    }
+    .quiz-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0 16px; border-bottom: 1px solid var(--color-border); margin-bottom: 16px;
+    }
+    .btn-exit {
+      background: none; border: none; color: var(--color-muted);
+      font-family: inherit; font-size: 14px; cursor: pointer; padding: 8px 4px;
+    }
+    .btn-exit-home {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-muted);
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-exit-home:hover {
+      border-color: var(--color-danger);
+      color: var(--color-danger);
+    }
+    .timer { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .timer.warning { color: var(--color-danger); }
+    .timer.overtime::before { content: '+'; }
+    .progress-wrap { margin-bottom: 16px; }
+    .progress-bar-bg {
+      height: 8px; background: var(--color-border); border-radius: 999px;
+      overflow: hidden; margin-bottom: 6px;
+    }
+    .progress-bar-fill {
+      height: 100%; background: var(--color-primary); border-radius: 999px; transition: width 0.3s ease;
+    }
+    .progress-text { font-size: 13px; color: var(--color-muted); text-align: right; }
+    .grade-bar { display: flex; justify-content: flex-end; margin-bottom: 12px; }
+    .btn-grade {
+      padding: 8px 14px; background: var(--color-success); color: #fff;
+      border: none; border-radius: 8px; font-family: inherit;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .badge-row { margin-bottom: 14px; }
+    .field-badge {
+      display: inline-block; font-size: 12px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px; margin-right: 6px;
+    }
+    .field-badge.kanji { background: #FEF3C7; color: #92400E; }
+    .field-badge.vocab { background: #DCFCE7; color: #166534; }
+    .field-badge.grammar { background: #EDE9FE; color: #5B21B6; }
+    .field-badge.reading { background: #FEE2E2; color: #991B1B; }
+    .field-badge.listening { background: #DBEAFE; color: #1E40AF; }
+    .section-badge { display: inline-block; font-size: 12px; color: var(--color-muted); }
+    .passage-box {
+      max-height: 250px; overflow-y: auto; background: #F8FAFC;
+      border: 1px solid var(--color-border); border-radius: 8px;
+      padding: 14px; margin-bottom: 16px; font-size: 15px; line-height: 1.8; white-space: pre-wrap;
+    }
+    .question-text { font-size: 16px; font-weight: 500; margin-bottom: 20px; line-height: 1.7; }
+    .tts-area { text-align: center; margin-bottom: 20px; }
+    .btn-tts {
+      padding: 16px 32px; background: var(--color-primary); color: #fff;
+      border: none; border-radius: 999px; font-family: inherit;
+      font-size: 16px; font-weight: 600; cursor: pointer; min-width: 160px;
+    }
+    .btn-tts.stop { background: var(--color-danger); }
+    .choices { display: flex; flex-direction: column; gap: 10px; }
+    .choice-btn {
+      display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px;
+      padding: 12px 16px; background: var(--color-card);
+      border: 2px solid var(--color-border); border-radius: var(--radius);
+      font-family: inherit; font-size: 15px; text-align: left; cursor: pointer;
+      color: var(--color-text); transition: border-color 0.15s, background 0.15s;
+    }
+    .choice-btn.selected { border-color: var(--color-primary); background: #EFF6FF; }
+    .choice-num {
+      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+      display: grid; place-items: center; font-size: 13px; font-weight: 700;
+      background: #F1F5F9; color: var(--color-muted);
+    }
+    .choice-btn.selected .choice-num { background: var(--color-primary); color: #fff; }
+
+    .sort-words {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: var(--color-bg);
+      border-radius: 8px;
+      border: 1px solid var(--color-border);
+    }
+    .sort-word {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 15px;
+    }
+    .sort-num {
+      font-size: 12px;
+      color: var(--color-muted);
+      font-weight: 700;
+      margin-right: 2px;
+    }
+
+    .choice-img { max-width: 100%; max-height: 120px; border-radius: 8px; object-fit: contain; }
+    .quiz-nav {
+      display: flex; justify-content: space-between; gap: 12px;
+      margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--color-border);
+    }
+    .btn-nav {
+      flex: 1; padding: 14px; border-radius: var(--radius);
+      font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--color-border); background: var(--color-card); color: var(--color-text);
+    }
+    .btn-nav.primary { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    .btn-nav:disabled { opacity: 0.4; cursor: not-allowed; }
+    .result-header { text-align: center; padding: 24px 0; }
+    .result-icon { font-size: 3rem; margin-bottom: 8px; }
+    .result-verdict { font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+    .result-verdict.pass { color: var(--color-success); }
+    .result-verdict.fail { color: var(--color-danger); }
+    .result-score-big { font-size: 2rem; font-weight: 700; margin-bottom: 4px; }
+    .result-time { font-size: 14px; color: var(--color-muted); margin-bottom: 24px; }
+    .result-section {
+      background: var(--color-card); border: 1px solid var(--color-border);
+      border-radius: var(--radius); padding: 16px; margin-bottom: 20px;
+    }
+    .result-section h3 { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: var(--color-muted); }
+    .section-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0; border-bottom: 1px solid var(--color-border); font-size: 14px;
+    }
+    .section-row:last-child { border-bottom: none; }
+    .section-row .fail-hint { display: block; font-size: 12px; color: var(--color-danger); margin-top: 4px; }
+    .bar-row {
+      display: grid; grid-template-columns: 48px 1fr 40px;
+      align-items: center; gap: 10px; margin-bottom: 10px; font-size: 13px;
+    }
+    .bar-track { height: 10px; background: var(--color-border); border-radius: 999px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--color-primary); border-radius: 999px; transition: width 0.6s ease; }
+    .btn-secondary {
+      width: 100%; padding: 14px; margin-bottom: 10px; border-radius: var(--radius);
+      font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+      border: 1px solid var(--color-border); background: var(--color-card); color: var(--color-text);
+    }
+
+    .start-form {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--color-muted);
+    }
+    .form-group input[type="text"],
+    .form-group select {
+      padding: 12px 14px;
+      border: 2px solid var(--color-border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 15px;
+      color: var(--color-text);
+      background: var(--color-bg);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group select:focus {
+      border-color: var(--color-primary);
+    }
+    .result-meta {
+      background: var(--color-card);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 24px;
+    }
+    .result-meta-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .meta-label {
+      font-size: 11px;
+      color: var(--color-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .meta-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--color-text);
+    }
+    @media print {
+      .quiz-header, .grade-bar, .quiz-nav,
+      #btnRetry, #btnHome, #btnPrint, #mistakeStatus,
+      .warn-banner, .loading-overlay {
+        display: none !important;
+      }
+      .screen { display: block !important; }
+      #screenStart, #screenQuiz { display: none !important; }
+      #screenResult { display: block !important; }
+      body { background: white; }
+      .result-section { break-inside: avoid; }
+      .review-passage {
+        max-height: none;
+        overflow: visible;
+      }
+    }
+
+
+    .review-item {
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      background: var(--color-card);
+    }
+    .review-item.correct { border-left: 4px solid var(--color-success); }
+    .review-item.incorrect { border-left: 4px solid var(--color-danger); }
+    .review-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .review-num {
+      font-size: 12px;
+      color: var(--color-muted);
+      font-weight: 600;
+    }
+    .review-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 700;
+    }
+    .review-badge.kanji   { background:#FEF3C7; color:#92400E; }
+    .review-badge.vocab   { background:#DCFCE7; color:#166534; }
+    .review-badge.grammar { background:#EDE9FE; color:#5B21B6; }
+    .review-badge.reading { background:#FEE2E2; color:#991B1B; }
+    .review-badge.listening { background:#DBEAFE; color:#1E40AF; }
+    .review-verdict { font-size: 18px; margin-left: auto; }
+    .review-question {
+      font-size: 14px;
+      color: var(--color-text);
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .review-passage {
+      font-size: 12px;
+      color: var(--color-muted);
+      background: var(--color-bg);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+      max-height: 80px;
+      overflow-y: auto;
+      line-height: 1.6;
+    }
+    .review-answers {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 13px;
+    }
+    .review-your-answer { color: var(--color-danger); }
+    .review-your-answer.correct-ans { color: var(--color-success); }
+    .review-correct-answer { color: var(--color-success); font-weight: 600; }
+    .review-unanswered { color: var(--color-muted); font-style: italic; }
+
+    .kanji-word {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="warn-banner" id="warnBanner"></div>
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <div>問題を読み込んでいます...</div>
+    </div>
+    <div class="modal-backdrop" id="timerModal">
+      <div class="modal">
+        <p>時間が経過しました。<br>引き続き回答を続けることができます。</p>
+        <button type="button" id="btnCloseTimerModal">閉じる</button>
+      </div>
+    </div>
+
+    <div class="screen active" id="screenStart">
+      <div style="padding: 12px 16px 0;">
+        <button type="button" id="btnStartToHome"
+          style="background:transparent; border:1px solid #E2E8F0; color:#64748B;
+                 padding:6px 14px; border-radius:8px; font-size:13px; cursor:pointer;">
+          ← ホーム
+        </button>
+      </div>
+      <h1 class="start-title">JLPT N3 模擬試験</h1>
+      <table class="exam-table">
+        <thead><tr><th>セクション</th><th>分野</th><th>問題数</th></tr></thead>
+        <tbody>
+          <tr><td>文字と語彙</td><td>漢字 + 語彙</td><td>10 + 10 = 20問</td></tr>
+          <tr><td>会話と表現</td><td>文法</td><td>15問</td></tr>
+          <tr><td>読解</td><td>読解</td><td>5問</td></tr>
+          <tr><td>聴解</td><td>聴解</td><td>10問</td></tr>
+          <tr><td>合計</td><td></td><td>50問</td></tr>
+        </tbody>
+      </table>
+      <div class="info-box">
+        <p><strong>制限時間:</strong> 70分（超過後も回答継続可能）</p>
+        <p style="margin-top:8px"><strong>合格ライン:</strong> 各セクション31%以上 かつ 総合65%以上（163/250点）</p>
+      </div>
+
+      <div class="start-form">
+        <div class="form-group">
+          <label for="inputName">お名前</label>
+          <input type="text" id="inputName" placeholder="例：山田 太郎" maxlength="30">
+        </div>
+        <div class="form-group">
+          <label for="selectRound">回次</label>
+          <select id="selectRound">
+            <option value="1">第1回</option>
+            <option value="2">第2回</option>
+            <option value="3">第3回</option>
+            <option value="4">第4回</option>
+            <option value="5">第5回</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" type="button" id="btnStartExam">試験開始</button>
+    </div>
+
+    <div class="screen" id="screenQuiz">
+      <div class="quiz-header">
+        <div style="display:flex;gap:8px;align-items:center;"><button type="button" id="btnExitToHome" class="btn-exit-home">← ホーム</button><button class="btn-exit" type="button" id="btnExit">← 終了</button></div>
+        <div class="timer" id="timerDisplay">70:00 残</div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">0 / 50</div>
+      </div>
+      <div class="grade-bar"><button class="btn-grade" type="button" id="btnGradeTop">採点する</button></div>
+      <div class="badge-row" id="badgeRow"></div>
+      <div id="questionArea"></div>
+      <div class="quiz-nav">
+        <button class="btn-nav" type="button" id="btnPrev">← 前へ</button>
+        <button class="btn-nav primary" type="button" id="btnNext">次へ →</button>
+      </div>
+    </div>
+
+    <div class="screen" id="screenResult">
+      <div class="result-meta" id="resultMeta"></div>
+      <div class="result-header" id="resultHeader"></div>
+      <div class="result-section" id="sectionResults"></div>
+      <div class="result-section">
+        <h3>分野別正答率</h3>
+        <div id="barChart"></div>
+      </div>
+      <button class="btn-primary" type="button" id="btnRetry">もう一度挑戦</button>
+      <div id="mistakeStatus" style="
+  display:none;
+  background:#DCFCE7;
+  color:#166534;
+  border:1px solid #86EFAC;
+  border-radius:8px;
+  padding:12px 16px;
+  margin-bottom:12px;
+  font-size:14px;
+  font-weight:600;
+"></div>
+      <button class="btn-secondary" type="button" id="btnPrint" onclick="window.print()">🖨 印刷する</button>
+      <div class="result-section" id="reviewSection">
+  <h3 class="section-title">問題別結果</h3>
+  <div id="reviewList"></div>
+</div>
+<button class="btn-secondary" type="button" id="btnHome">ホームへ戻る</button>
+    </div>
+  </div>
+
+  <script>
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbwjaswl5-q581vijF4IyQIGxAj85MTWH0b7GxIflXxSGULcKwY2K6-5ICZWYMKCMgpw2Q/exec';
+    const API_KEY = 'bb_prod_2026_xK9mN3vQ7rL8wP5j';
+    const EXAM_TIME_SEC = 70 * 60;
+    const PASS_TOTAL = 163;
+    const CHOICE_MARKS = ['①', '②', '③', '④'];
+
+    // 各カテゴリからフェッチする上限（実際の出題数より多めに取得してプールを確保）
+    const EXAM_CONFIG = [
+      { category: 'kanji_imi',   limit: 60, section: '文字と語彙', label: '漢字', mergeKey: 'kanji' },
+      { category: 'kanji_yomi',  limit: 60, section: '文字と語彙', label: '漢字', mergeKey: 'kanji' },
+      { category: 'kanji_kanji', limit: 60, section: '文字と語彙', label: '漢字', mergeKey: 'kanji' },
+      { category: 'vocab',     limit: 40, section: '文字と語彙', label: '語彙',   pick: 10 },
+      { category: 'grammar',   limit: 50, section: '会話と表現', label: '文法',   pick: 15 },
+      { category: 'reading',   limit: 20, section: '読解',       label: '読解',   pick: 5 },
+      { category: 'listening', limit: 30, section: '聴解',       label: '聴解',   pick: 10 },
+    ];
+    // 漢字は3サブカテゴリをまとめてシャッフル後に何問選ぶか
+    const KANJI_PICK = 10;
+
+    const SECTION_CONFIG = {
+      '文字と語彙': { categories: ['kanji', 'vocab'], maxScore: 50 },
+      '会話と表現': { categories: ['grammar'],         maxScore: 50 },
+      '読解':       { categories: ['reading'],          maxScore: 75 },
+      '聴解':       { categories: ['listening'],        maxScore: 75 },
+    };
+
+    const CATEGORY_WARN = {
+      kanji_imi:   '漢字（意味）',
+      kanji_yomi:  '漢字（読み方）',
+      kanji_kanji: '漢字（漢字）',
+      vocab:    '語彙',
+      grammar:  '文法',
+      reading:  '読解',
+      listening:'聴解',
+    };
+
+    const state = {
+      questions: [], answers: {}, currentIndex: 0,
+      startTime: null, timerInterval: null, timerExpired: false,
+      ttsPlaying: false, fetchWarnings: [], elapsedOnSubmit: 0,
+      userName: '',
+      round: 1,
+      examSubmitted: false,
+      mistakeSaveStarted: false,
+    };
+
+    function makeMock(category, count, builder) {
+      return Array.from({ length: count }, (_, i) => builder(i));
+    }
+
+    const MOCK_BY_CATEGORY = {
+      kanji_imi: makeMock('kanji', 60, (i) => ({
+        id: `mock_kanji_imi_${i + 1}`, section: 'kanji', type: '4choice',
+        question: `（模擬）漢字意味問題 ${i + 1}`,
+        choices: ['選択肢A', '選択肢B', '選択肢C', '選択肢D'], answer: 1,
+      })),
+      kanji_yomi: makeMock('kanji', 60, (i) => ({
+        id: `mock_kanji_yomi_${i + 1}`, section: 'kanji', type: '4choice',
+        question: `（模擬）漢字読み方問題 ${i + 1}`,
+        choices: ['よみA', 'よみB', 'よみC', 'よみD'], answer: 1,
+      })),
+      kanji_kanji: makeMock('kanji', 60, (i) => ({
+        id: `mock_kanji_kanji_${i + 1}`, section: 'kanji', type: '4choice',
+        question: `（模擬）漢字書き問題 ${i + 1}`,
+        choices: ['漢A', '漢B', '漢C', '漢D'], answer: 1,
+      })),
+      vocab: makeMock('vocab', 40, (i) => ({
+        id: `vocab_m_${i + 1}`, section: 'vocab',
+        question: `キッチン（模擬 ${i + 1}）`,
+        choices: ['kitchen', 'bathroom', 'bedroom', 'garden'], answer: 1,
+      })),
+      grammar: makeMock('grammar', 50, (i) => ({
+        id: `grammar_m_${i + 1}`, section: 'grammar',
+        question: `彼は日本（　）住んでいます。（模擬 ${i + 1}）`,
+        choices: ['に', 'で', 'を', 'が'], answer: 1,
+      })),
+      reading: makeMock('reading', 20, (i) => ({
+        id: `reading_m_${i + 1}`, section: 'reading',
+        passage: 'これは読解の模擬本文です。' + 'あ'.repeat(200),
+        question: `本文の内容に合うものはどれですか？（模擬 ${i + 1}）`,
+        choices: ['選択肢A', '選択肢B', '選択肢C', '選択肢D'], answer: 2,
+      })),
+      listening: makeMock('listening', 30, (i) => ({
+        id: `listening_m_${i + 1}`, section: 'listening',
+        question: `次の会話を聞いて、正しいものを選びなさい。（模擬 ${i + 1}）`,
+        script: [
+          { speaker: 'ナレーター', text: '次の会話を聞いてください。' },
+          { speaker: '女', text: 'すみません、駅はどこですか？' },
+          { speaker: '男', text: 'あそこです。' },
+        ],
+        choices: ['駅は右です', '駅は左です', '駅はあそこです', 'わかりません'], answer: 3,
+      })),
+    };
+
+    function showScreen(id) {
+      document.querySelectorAll('.screen').forEach((el) => el.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+    }
+
+    function showLoading(show) {
+      document.getElementById('loadingOverlay').classList.toggle('show', show);
+    }
+
+    function showWarnings() {
+      const el = document.getElementById('warnBanner');
+      if (!state.fetchWarnings.length) { el.classList.remove('show'); el.textContent = ''; return; }
+      el.textContent = state.fetchWarnings.map((w) => `⚠ ${w}`).join('　');
+      el.classList.add('show');
+    }
+
+
+    function buildImageUrl(fileId) {
+      if (!fileId) return null;
+      const s = String(fileId).trim();
+      if (!s) return null;
+      if (s.startsWith('http://') || s.startsWith('https://')) return s;
+      return 'https://drive.google.com/thumbnail?id=' + s + '&sz=w400';
+    }
+
+    function resolveImageChoice(raw) {
+      if (!raw) return null;
+      const toUrl = (v) => buildImageUrl(v);
+      if (Array.isArray(raw)) {
+        const urls = raw.map(toUrl).filter(Boolean);
+        if (!urls.length) return null;
+        return urls.length === 1 ? urls[0] : urls;
+      }
+      const s = String(raw).trim();
+      if (s.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) {
+            const urls = parsed.map(toUrl).filter(Boolean);
+            if (!urls.length) return null;
+            return urls.length === 1 ? urls[0] : urls;
+          }
+        } catch (e) { /* fall through */ }
+      }
+      return toUrl(raw);
+    }
+
+    function normalizeQuestion(item, cfg, index) {
+      let script = item.script;
+      if (typeof script === 'string') { try { script = JSON.parse(script); } catch { script = null; } }
+      const answer = Number(item.answer);
+      return {
+        id: item.id || `${cfg.category}_${String(index + 1).padStart(3, '0')}`,
+        type: item.type || '4choice',
+        section: item.section || cfg.category,
+        sectionName: cfg.section,
+        fieldLabel: cfg.label,
+        question: item.question || item.instruction || '',
+        passage: item.passage || null,
+        words: Array.isArray(item.words) ? item.words : [],
+        choices: Array.isArray(item.choices) ? item.choices : [],
+        answer: Number.isFinite(answer) ? answer : 1,
+        script: script || null,
+        word: item.word || null,
+        image_choice: resolveImageChoice(item.image_choice || item.image_file_id || null),
+      };
+    }
+
+
+    function slicePage(pool, round) {
+      const total = pool.length;
+      const pageSize = Math.ceil(total / 5);
+      const start = (round - 1) * pageSize;
+      const end = Math.min(start + pageSize, total);
+      return pool.slice(start, end);
+    }
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    async function fetchCategory(cfg) {
+      const url = `${GAS_URL}?action=exam&category=${encodeURIComponent(cfg.category)}&apiKey=${encodeURIComponent(API_KEY)}&limit=${cfg.limit}&lang=ja&round=${state.round}`;
+      try {
+        const res = await fetch(url, {
+          method: 'GET',
+          redirect: 'follow',
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json.status !== 'success') throw new Error(json.message || 'GAS error');
+        const rows = json.questions || [];
+        if (!rows.length) throw new Error('empty');
+        return rows.map((item, i) => normalizeQuestion(item, cfg, i));
+      } catch (err) {
+        console.warn('[exam] fetchCategory failed:', cfg.category, err);
+        state.fetchWarnings.push(
+          `${CATEGORY_WARN[cfg.category] || cfg.category}問題の読み込みに失敗しました（模擬データを使用）`
+        );
+        return (MOCK_BY_CATEGORY[cfg.category] || []).slice(0, cfg.limit);
+      }
+    }
+
+    // ─── 重複防止ユーティリティ ───────────────────────────────────
+    const SEEN_KEY_PREFIX = 'bb_seen_';
+
+    function getSeenIds(category) {
+      try {
+        return new Set(JSON.parse(localStorage.getItem(SEEN_KEY_PREFIX + category) || '[]'));
+      } catch { return new Set(); }
+    }
+
+    function markSeen(category, ids) {
+      try {
+        const current = getSeenIds(category);
+        ids.forEach(id => current.add(id));
+        localStorage.setItem(SEEN_KEY_PREFIX + category, JSON.stringify([...current]));
+      } catch { /* localStorage unavailable */ }
+    }
+
+    function resetSeen(category) {
+      try { localStorage.removeItem(SEEN_KEY_PREFIX + category); } catch { }
+    }
+
+    /**
+     * プールから未出題問題を優先してpick問選ぶ。
+     * 未出題が足りなければリセットして再利用（枯渇しない）。
+     */
+    function pickUnique(pool, category, pick) {
+      const seen = getSeenIds(category);
+      let fresh = pool.filter(q => !seen.has(q.id));
+
+      // 未出題が足りない場合はリセットして全プールを使う
+      if (fresh.length < pick) {
+        resetSeen(category);
+        fresh = [...pool];
+      }
+
+      const picked = shuffleArray(fresh).slice(0, pick);
+      markSeen(category, picked.map(q => q.id));
+      return picked;
+    }
+    // ─────────────────────────────────────────────────────────────
+
+    async function fetchAllQuestions() {
+      state.fetchWarnings = [];
+      const results = await Promise.all(EXAM_CONFIG.map((cfg) => fetchCategory(cfg)));
+
+      // 漢字3サブカテゴリをまとめてシャッフル・重複防止
+      const kanjiAll = [];
+      results.forEach((qs, i) => {
+        const cfg = EXAM_CONFIG[i];
+        if (cfg.mergeKey === 'kanji') {
+          qs.forEach(q => {
+            kanjiAll.push({
+              ...q,
+              section: 'kanji',
+              sectionName: '文字と語彙',
+              fieldLabel: '漢字',
+            });
+          });
+        }
+      });
+      const kanjiPicked = pickUnique(kanjiAll, 'kanji', KANJI_PICK);
+
+      // その他カテゴリは pick プロパティの数だけ重複防止で選ぶ
+      const others = [];
+      results.forEach((qs, i) => {
+        const cfg = EXAM_CONFIG[i];
+        if (!cfg.mergeKey) {
+          const pool = qs.map(q => ({
+            ...q,
+            section: q.section || cfg.category,
+            sectionName: q.sectionName || cfg.section,
+            fieldLabel: q.fieldLabel || cfg.label,
+          }));
+          const picked = pickUnique(pool, cfg.category, cfg.pick || pool.length);
+          others.push(...picked);
+        }
+      });
+
+      state.questions = [...kanjiPicked, ...others];
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    }
+
+    function updateTimer() {
+      const elapsed = Math.floor((Date.now() - state.startTime) / 1000);
+      const el = document.getElementById('timerDisplay');
+      if (!state.timerExpired) {
+        const remain = Math.max(0, EXAM_TIME_SEC - elapsed);
+        el.textContent = `${formatTime(remain)} 残`;
+        el.classList.toggle('warning', remain <= 600 && remain > 0);
+        el.classList.remove('overtime');
+        if (remain === 0) {
+          state.timerExpired = true;
+          document.getElementById('timerModal').classList.add('show');
+        }
+      } else {
+        el.textContent = `${formatTime(elapsed - EXAM_TIME_SEC)} 超過`;
+        el.classList.add('warning', 'overtime');
+      }
+    }
+
+    function startTimer() {
+      state.startTime = Date.now();
+      state.timerExpired = false;
+      clearInterval(state.timerInterval);
+      updateTimer();
+      state.timerInterval = setInterval(updateTimer, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(state.timerInterval);
+      if (state.startTime) state.elapsedOnSubmit = Math.floor((Date.now() - state.startTime) / 1000);
+    }
+
+    function getUnansweredCount() {
+      return state.questions.filter((q) => state.answers[q.id] === undefined).length;
+    }
+
+    function getCorrectIndex(q) {
+      const a = Number(q.answer);
+      return (a >= 1 && a <= 4) ? a - 1 : a;
+    }
+
+    function isCorrect(q) {
+      const sel = state.answers[q.id];
+      return sel !== undefined && sel === getCorrectIndex(q);
+    }
+
+    function calcScore() {
+      const results = {};
+      for (const [section, cfg] of Object.entries(SECTION_CONFIG)) {
+        const sectionQs = state.questions.filter((q) => cfg.categories.includes(q.section));
+        const correct = sectionQs.filter(isCorrect).length;
+        const total = sectionQs.length;
+        const score = total > 0 ? Math.round((correct / total) * cfg.maxScore) : 0;
+        results[section] = {
+          correct, total, score, maxScore: cfg.maxScore,
+          passed: total > 0 && correct / total >= 0.31,
+        };
+      }
+      const totalScore = Object.values(results).reduce((s, r) => s + r.score, 0);
+      return { sections: results, totalScore, totalPassed: Object.values(results).every((r) => r.passed) && totalScore >= PASS_TOTAL };
+    }
+
+    function calcFieldStats() {
+      const stats = {};
+      const fields = [
+        { section: 'kanji', label: '漢字' },
+        { section: 'vocab', label: '語彙' },
+        { section: 'grammar', label: '文法' },
+        { section: 'reading', label: '読解' },
+        { section: 'listening', label: '聴解' },
+      ];
+
+      fields.forEach((f) => {
+        const qs = state.questions.filter((q) => q.section === f.section);
+        const correct = qs.filter(isCorrect).length;
+        stats[f.label] = { pct: qs.length ? Math.round((correct / qs.length) * 100) : 0 };
+      });
+
+      return stats;
+    }
+
+    
+    function renderReviewList() {
+      const container = document.getElementById('reviewList');
+      if (!container) return;
+
+      const LABEL_MAP = {
+        kanji: '漢字', vocab: '語彙', grammar: '文法',
+        reading: '読解', listening: '聴解'
+      };
+
+      let html = '';
+      state.questions.forEach((q, i) => {
+        const userAnswerIdx = state.answers[q.id];
+        const correctIdx    = getCorrectIndex(q);
+        const answered      = userAnswerIdx !== undefined && userAnswerIdx !== null;
+        const correct       = answered && userAnswerIdx === correctIdx;
+
+        const label     = LABEL_MAP[q.section] || q.section || '';
+        const verdict   = !answered ? '－' : correct ? '⭕' : '❌';
+        const itemClass = !answered ? '' : correct ? 'correct' : 'incorrect';
+
+        const userChoiceText = answered
+          ? (q.choices && q.choices[userAnswerIdx] ? escapeHtml(q.choices[userAnswerIdx]) : `選択肢${userAnswerIdx + 1}`)
+          : null;
+        const correctChoiceText = q.choices && q.choices[correctIdx]
+          ? escapeHtml(q.choices[correctIdx])
+          : `選択肢${correctIdx + 1}`;
+
+        html += `<div class="review-item ${itemClass}">
+          <div class="review-meta">
+            <span class="review-num">第${i + 1}問</span>
+            <span class="review-badge ${q.section || ''}">${escapeHtml(label)}</span>
+            <span class="review-verdict">${verdict}</span>
+          </div>`;
+
+        if (q.passage) {
+          html += `<div class="review-passage">${escapeHtml(q.passage)}</div>`;
+        }
+
+        html += `<div class="review-question">${escapeHtml(q.question || '')}</div>
+          <div class="review-answers">`;
+
+        if (!answered) {
+          html += `<span class="review-unanswered">未回答</span>`;
+        } else if (correct) {
+          html += `<span class="review-your-answer correct-ans">あなたの回答：${userChoiceText} ✓</span>`;
+        } else {
+          html += `<span class="review-your-answer">あなたの回答：${userChoiceText}</span>
+            <span class="review-correct-answer">正解：${correctChoiceText}</span>`;
+        }
+
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+function stopTTS() { speechSynthesis.cancel(); state.ttsPlaying = false; }
+
+    function playScript(scriptArray, btnEl) {
+      if (!scriptArray || !scriptArray.length) return;
+      if (state.ttsPlaying) {
+        stopTTS();
+        if (btnEl) { btnEl.textContent = '▶ 再生'; btnEl.classList.remove('stop'); }
+        return;
+      }
+      state.ttsPlaying = true;
+      if (btnEl) { btnEl.textContent = '■ 停止'; btnEl.classList.add('stop'); }
+      let index = 0;
+      function speakNext() {
+        if (index >= scriptArray.length) {
+          state.ttsPlaying = false;
+          if (btnEl) { btnEl.textContent = '↺ もう一度'; btnEl.classList.remove('stop'); }
+          return;
+        }
+        const item = scriptArray[index++];
+        const utter = new SpeechSynthesisUtterance(item.text);
+        utter.lang = 'ja-JP';
+        utter.rate = 0.85;
+        utter.pitch = item.speaker === '女' ? 1.2 : item.speaker === '男' ? 0.8 : 1.0;
+        utter.onend = speakNext;
+        utter.onerror = speakNext;
+        speechSynthesis.speak(utter);
+      }
+      speakNext();
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function renderQuestion() {
+      const q = state.questions[state.currentIndex];
+      if (!q) return;
+      const total = state.questions.length;
+      const current = state.currentIndex + 1;
+      document.getElementById('progressBar').style.width = `${(current / total) * 100}%`;
+      document.getElementById('progressText').textContent = `${current} / ${total}`;
+      const unanswered = getUnansweredCount();
+      document.getElementById('btnGradeTop').textContent = unanswered > 0 ? `採点する（未回答: ${unanswered}問）` : '採点する';
+      document.getElementById('badgeRow').innerHTML =
+        `<span class="field-badge ${q.section}">${q.fieldLabel}</span><span class="section-badge">${q.sectionName}</span>`;
+
+      let html = '';
+      if (q.passage) html += `<div class="passage-box">${escapeHtml(q.passage)}</div>`;
+      if (q.script && q.script.length) html += `<div class="tts-area"><button type="button" class="btn-tts" id="btnTTS">▶ 再生</button></div>`;
+      if (q.section === 'kanji' && q.word && q.word !== q.question.trim()) {
+        html += `<div class="question-text">
+    <div class="kanji-word">${escapeHtml(q.word)}</div>
+    <div>${escapeHtml(q.question)}</div>
+  </div>`;
+      } else {
+        html += `<div class="question-text">${escapeHtml(q.question)}</div>`;
+      }
+
+      if (q.type === 'sort_choice') {
+        html += '<div class="sort-words">';
+        (q.words || []).forEach((w, i) => {
+          html += `<span class="sort-word"><span class="sort-num">${i + 1}</span>${escapeHtml(w)}</span>`;
+        });
+        html += '</div>';
+        html += '<div class="choices">';
+        (q.choices || []).forEach((order, i) => {
+          const sel = state.answers[q.id] === i ? ' selected' : '';
+          html += `<button type="button" class="choice-btn${sel}" data-choice="${i}"><span class="choice-num">${CHOICE_MARKS[i]}</span><span>${escapeHtml(order)}</span></button>`;
+        });
+        html += '</div>';
+      } else if (q.image_choice) {
+        const imgUrls = Array.isArray(q.image_choice) ? q.image_choice : [q.image_choice];
+        html += '<div class="choices">';
+        if (imgUrls.length >= 2) {
+          imgUrls.forEach((url, i) => {
+            const sel = state.answers[q.id] === i ? ' selected' : '';
+            html += `<button type="button" class="choice-btn${sel}" data-choice="${i}"><span class="choice-num">${CHOICE_MARKS[i]}</span><img class="choice-img" src="${escapeHtml(url)}" alt="選択肢${i + 1}" referrerpolicy="no-referrer" onerror="this.style.display='none';" /></button>`;
+          });
+        } else {
+          html += `<img class="choice-img" src="${escapeHtml(imgUrls[0])}" alt="問題図版" referrerpolicy="no-referrer" style="display:block;max-width:100%;margin-bottom:12px;border-radius:8px;" onerror="this.outerHTML='<p style=\'color:#64748B;font-size:13px;\'>[図版を読み込めませんでした]</p>';">`;
+          if (q.choices && q.choices.length >= 2) {
+            (q.choices || []).forEach((c, i) => {
+              const sel = state.answers[q.id] === i ? ' selected' : '';
+              html += `<button type="button" class="choice-btn${sel}" data-choice="${i}"><span class="choice-num">${CHOICE_MARKS[i]}</span><span>${escapeHtml(c)}</span></button>`;
+            });
+          } else {
+            for (let i = 0; i < 4; i++) {
+              const sel = state.answers[q.id] === i ? ' selected' : '';
+              html += `<button type="button" class="choice-btn${sel}" data-choice="${i}"><span class="choice-num">${CHOICE_MARKS[i]}</span><span>${CHOICE_MARKS[i]}</span></button>`;
+            }
+          }
+        }
+        html += '</div>';
+      } else {
+        html += '<div class="choices">';
+        q.choices.forEach((c, i) => {
+          const sel = state.answers[q.id] === i ? ' selected' : '';
+          html += `<button type="button" class="choice-btn${sel}" data-choice="${i}"><span class="choice-num">${CHOICE_MARKS[i]}</span><span>${escapeHtml(c)}</span></button>`;
+        });
+        html += '</div>';
+      }
+      document.getElementById('questionArea').innerHTML = html;
+
+      document.querySelectorAll('.choice-btn[data-choice]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.answers[q.id] = Number(btn.dataset.choice);
+          document.querySelectorAll('.choice-btn').forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        });
+      });
+      const ttsBtn = document.getElementById('btnTTS');
+      if (ttsBtn) ttsBtn.addEventListener('click', () => playScript(q.script, ttsBtn));
+
+      document.getElementById('btnPrev').disabled = state.currentIndex <= 0;
+      document.getElementById('btnNext').textContent = state.currentIndex >= total - 1 ? '採点する' : '次へ →';
+    }
+
+    function trySubmit() {
+      const unanswered = getUnansweredCount();
+      if (unanswered > 0 && !confirm(`${unanswered}問が未回答です。このまま採点しますか？`)) return;
+      submitExam();
+    }
+
+    function submitExam() {
+      if (state.examSubmitted) return;
+      state.examSubmitted = true;
+      stopTTS();
+      stopTimer();
+      const { sections, totalScore, totalPassed } = calcScore();
+      renderReviewList();
+      const fieldStats = calcFieldStats();
+      const elapsed = state.elapsedOnSubmit;
+
+      document.getElementById('resultHeader').innerHTML = `
+        <div class="result-icon">${totalPassed ? '✅' : '❌'}</div>
+        <div class="result-verdict ${totalPassed ? 'pass' : 'fail'}">${totalPassed ? '合格！' : '残念...不合格'}</div>
+        <div class="result-score-big">総合スコア: ${totalScore} / 250</div>
+        <div class="result-time">所要時間: ${formatTime(elapsed)}</div>`;
+
+      let sectionHtml = '<h3>セクション別結果</h3>';
+      for (const [name, r] of Object.entries(sections)) {
+        const icon = r.passed ? '✅' : '❌';
+        const hint = !r.passed ? '<span class="fail-hint">このセクションの学習を続けましょう</span>' : '';
+        sectionHtml += `<div class="section-row"><span>${name}${hint}</span><span>${r.correct}/${r.total}問　${r.score}/${r.maxScore}点 ${icon}</span></div>`;
+      }
+      document.getElementById('sectionResults').innerHTML = sectionHtml;
+
+      document.getElementById('barChart').innerHTML = Object.entries(fieldStats).map(([label, st]) =>
+        `<div class="bar-row"><span>${label}</span><div class="bar-track"><div class="bar-fill" style="width:${st.pct}%"></div></div><span>${st.pct}%</span></div>`
+      ).join('');
+
+      const metaEl = document.getElementById('resultMeta');
+      if (metaEl) {
+        metaEl.innerHTML = `
+    <div class="result-meta-row">
+      <span class="meta-label">氏名</span>
+      <span class="meta-value">${escapeHtml(state.userName)}</span>
+    </div>
+    <div class="result-meta-row">
+      <span class="meta-label">回次</span>
+      <span class="meta-value">第${state.round}回</span>
+    </div>`;
+      }
+
+      showScreen('screenResult');
+      saveMistakesToSheet();
+    }
+
+
+    async function saveMistakesToSheet() {
+      if (state.mistakeSaveStarted) return;
+      state.mistakeSaveStarted = true;
+      const mistakes = state.questions
+        .map((q, i) => {
+          const userIdx = state.answers[q.id];
+          const correctIdx = getCorrectIndex(q);
+          const answered = userIdx !== undefined && userIdx !== null;
+          if (!answered) return null;
+          if (userIdx === correctIdx) return null;
+          return {
+            questionNum:  i + 1,
+            section:      q.section || '',
+            question:     q.question || '',
+            choices:      q.choices  || [],
+            correctIndex: correctIdx,
+            userIndex:    userIdx,
+          };
+        })
+        .filter(Boolean);
+
+      const statusEl = document.getElementById('mistakeStatus');
+
+      if (mistakes.length === 0) {
+        if (statusEl) {
+          statusEl.textContent = '✅ 間違いなし（満点！）';
+          statusEl.style.background = '#DCFCE7';
+          statusEl.style.color = '#166534';
+          statusEl.style.border = '1px solid #86EFAC';
+          statusEl.style.display = 'block';
+          statusEl.style.padding = '12px 16px';
+          statusEl.style.borderRadius = '8px';
+          statusEl.style.marginBottom = '12px';
+          statusEl.style.fontSize = '14px';
+          statusEl.style.fontWeight = '600';
+        }
+        return;
+      }
+
+      try {
+        console.log('[saveMistakes] GASにPOST送信中... 間違い数:', mistakes.length);
+        const body = {
+          action:   'save_mistakes',
+          apiKey:   API_KEY,
+          userName: state.userName || '不明',
+          round:    state.round    || 1,
+          mistakes: mistakes,
+        };
+        const res = await fetch(GAS_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        console.log('[saveMistakes] レスポンス:', JSON.stringify(data));
+        if (statusEl) {
+          if (data.status === 'success') {
+            const n = data.count != null ? data.count : mistakes.length;
+            statusEl.textContent = `✅ 間違いノートを保存しました（${n}問）`;
+            statusEl.style.background = '#DCFCE7';
+            statusEl.style.color = '#166534';
+            statusEl.style.border = '1px solid #86EFAC';
+          } else {
+            statusEl.textContent = `⚠ 保存エラー: ${data.message || '不明なエラー'}`;
+            statusEl.style.background = '#FEF3C7';
+            statusEl.style.color = '#92400E';
+            statusEl.style.border = '1px solid #FCD34D';
+          }
+          statusEl.style.display = 'block';
+          statusEl.style.padding = '12px 16px';
+          statusEl.style.borderRadius = '8px';
+          statusEl.style.marginBottom = '12px';
+          statusEl.style.fontSize = '14px';
+          statusEl.style.fontWeight = '600';
+        }
+      } catch(err) {
+        console.log('[saveMistakes] エラー:', err);
+        if (statusEl) statusEl.textContent = `保存失敗: ${err.message}`;
+      }
+    }
+
+
+    function resetExam() {
+      stopTTS();
+      clearInterval(state.timerInterval);
+      state.questions = [];
+      state.answers = {};
+      state.currentIndex = 0;
+      state.startTime = null;
+      state.timerExpired = false;
+      state.fetchWarnings = [];
+      state.userName = '';
+      state.examSubmitted = false;
+      state.mistakeSaveStarted = false;
+      const saveEl = document.getElementById('mistakeStatus');
+      if (saveEl) { saveEl.textContent = ''; saveEl.style.display = 'none'; }
+      showWarnings();
+      showScreen('screenStart');
+    }
+
+    async function beginExam() {
+      const nameEl = document.getElementById('inputName');
+      const name = nameEl ? nameEl.value.trim() : '';
+      if (!name) {
+        nameEl.style.borderColor = 'var(--color-danger)';
+        nameEl.focus();
+        return;
+      }
+      nameEl.style.borderColor = '';
+      state.userName = name;
+      localStorage.setItem('bb_user_name', name);
+      state.round = parseInt(document.getElementById('selectRound').value, 10);
+
+      showLoading(true);
+      try { await fetchAllQuestions(); } finally { showLoading(false); }
+      if (!state.questions.length) { alert('問題を読み込めませんでした。'); return; }
+      state.answers = {};
+      state.examSubmitted = false;
+      state.mistakeSaveStarted = false;
+      state.currentIndex = 0;
+      showWarnings();
+      showScreen('screenQuiz');
+      startTimer();
+      renderQuestion();
+    }
+
+        document.getElementById('btnStartToHome')?.addEventListener('click', () => {
+      window.location.href = 'home.html';
+    });
+
+    document.getElementById('btnStartExam').addEventListener('click', beginExam);
+
+    const savedName = localStorage.getItem('bb_user_name') || '';
+    const nameElInit = document.getElementById('inputName');
+    if (nameElInit && savedName) nameElInit.value = savedName;
+
+    document.getElementById('btnCloseTimerModal').addEventListener('click', () => document.getElementById('timerModal').classList.remove('show'));
+    document.getElementById('btnExit').addEventListener('click', () => { if (confirm('試験を終了しますか？')) resetExam(); });
+    document.getElementById('btnExitToHome')?.addEventListener('click', () => {
+      const confirmed = confirm('試験を中断してホームに戻りますか？\n回答内容は保存されません。');
+      if (confirmed) {
+        stopTTS();
+        clearInterval(state.timerInterval);
+        window.location.href = 'home.html';
+      }
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', () => {
+      if (state.currentIndex > 0) { stopTTS(); state.currentIndex -= 1; renderQuestion(); }
+    });
+    document.getElementById('btnNext').addEventListener('click', () => {
+      if (state.currentIndex < state.questions.length - 1) { stopTTS(); state.currentIndex += 1; renderQuestion(); }
+      else trySubmit();
+    });
+    document.getElementById('btnGradeTop').addEventListener('click', trySubmit);
+    document.getElementById('btnRetry').addEventListener('click', resetExam);
+
+    /** F12用: 全問を同じ選択肢で回答 (0=①, 1=②, ...) */
+    window.bbAnswerAll = function(choiceIndex = 0) {
+      if (!state.questions.length) {
+        console.warn('試験が開始されていません。「試験開始」のあとに実行してください');
+        return;
+      }
+      const idx = Number(choiceIndex);
+      if (!Number.isFinite(idx) || idx < 0) {
+        console.warn('choiceIndex は 0 以上の数値にしてください (0=①)');
+        return;
+      }
+      state.questions.forEach((q) => { state.answers[q.id] = idx; });
+      const left = getUnansweredCount();
+      const mark = CHOICE_MARKS[idx] || String(idx + 1);
+      console.log(`全${state.questions.length}問を ${mark} で設定（未回答: ${left}問）`);
+      if (document.getElementById('screenQuiz')?.classList.contains('active')) renderQuestion();
+      return left;
+    };
+
+    /** F12用: 採点（画面上の「採点する」と同じ） */
+    window.bbSubmitExam = function() {
+      if (!state.questions.length) {
+        console.warn('試験が開始されていません');
+        return;
+      }
+      trySubmit();
+    };
+
+    /** F12用: 全問同じ選択肢で回答して採点 */
+    window.bbAnswerAllAndSubmit = function(choiceIndex = 0) {
+      const left = window.bbAnswerAll(choiceIndex);
+      if (left === undefined) return;
+      if (left > 0) console.warn(`未回答が${left}問残っています`);
+      window.bbSubmitExam();
+    };
+
+    document.getElementById('btnHome').addEventListener('click', () => { window.location.href = 'home.html'; });
+  </script>
+</body>
+</html>

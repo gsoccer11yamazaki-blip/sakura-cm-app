@@ -1,0 +1,1465 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N3 — 聴解</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #060a0f;
+      --bg-card: #0d1117;
+      --bg-surface: #161b22;
+      --border: #21262d;
+      --text-primary: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #14b8a6;
+      --accent-light: #2dd4bf;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --green: #1D9E75;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --nav-height: 72px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 6px 4px;
+      min-width: 44px;
+      text-decoration: none;
+    }
+
+    .header-btn:hover { color: var(--text-primary); }
+    .header-title { font-size: 1rem; font-weight: 600; }
+    .header-icon { font-size: 1.2rem; background: none; border: none; opacity: 0.5; padding: 6px; }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-primary);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .ch-tab-bar {
+      display: flex;
+      gap: 8px;
+      padding: 12px 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .ch-tab {
+      flex: 1;
+      min-width: 64px;
+      padding: 10px 0;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .ch-tab.active {
+      color: var(--accent-light);
+      border-color: var(--accent);
+      background: rgba(20, 184, 166, 0.12);
+    }
+
+    .ch-tab:disabled {
+      opacity: 0.35;
+      cursor: default;
+    }
+
+    .chapter-card.figure-entry {
+      border-color: rgba(20, 184, 166, 0.45);
+      background: linear-gradient(135deg, rgba(20, 184, 166, 0.08), var(--bg-card));
+    }
+
+    .chapter-card.figure-entry .chapter-num {
+      color: var(--amber);
+    }
+
+    .figure-empty {
+      margin: 20px;
+      padding: 28px 20px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      line-height: 1.7;
+    }
+
+    .progress-section { padding: 16px 20px 8px; }
+
+    .progress-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .progress-label { font-size: 0.82rem; color: var(--text-muted); }
+
+    .progress-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .content-block { padding: 0 20px 16px; }
+
+    .section-title {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      padding: 0 4px;
+    }
+
+    .chapter-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .chapter-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      box-shadow: var(--shadow);
+    }
+
+    .chapter-card:hover { border-color: var(--accent); }
+    .chapter-card:active { transform: scale(0.98); }
+
+    .chapter-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .chapter-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--bg-surface);
+      display: grid;
+      place-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 1.1rem;
+    }
+
+    .chapter-name { font-weight: 600; font-size: 0.95rem; }
+    .chapter-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+
+    .chapter-arrow { color: var(--text-muted); font-size: 1.2rem; }
+
+    .block-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 14px 16px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .badge.type { color: var(--accent-light); }
+
+    .instruction-box {
+      padding: 14px 16px;
+      font-size: 0.95rem;
+      line-height: 1.75;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .audio-row {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .audio-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius-btn);
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .audio-btn:hover { border-color: var(--accent); }
+
+    .script-box {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      max-height: 160px;
+      overflow-y: auto;
+    }
+
+    .script-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-light);
+      margin-bottom: 8px;
+    }
+
+    .script-line { margin-bottom: 8px; font-size: 0.88rem; line-height: 1.7; }
+    .script-speaker {
+      display: inline-block;
+      min-width: 4.5em;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .question-area { padding: 16px; }
+
+    .choices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .choice-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9rem;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .choice-btn.selected { border-color: var(--accent); }
+    .choice-btn.correct { background: rgba(29, 158, 117, 0.15); border-color: var(--green); color: var(--green); }
+    .choice-btn.wrong { background: rgba(239, 68, 68, 0.15); border-color: var(--red); color: var(--red); }
+    .choice-btn:disabled { cursor: default; pointer-events: none; }
+
+    .choice-num {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+
+    .image-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .image-choice-btn {
+      background: var(--bg-surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 8px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .image-choice-btn img {
+      width: 100%;
+      height: auto;
+      border-radius: 4px;
+      display: block;
+    }
+
+    .image-choice-btn .choice-num { margin: 6px auto 0; }
+    .image-choice-btn.selected { border-color: var(--accent); }
+    .image-choice-btn.correct { border-color: var(--green); }
+    .image-choice-btn.wrong { border-color: var(--red); }
+    .image-choice-btn:disabled { pointer-events: none; opacity: 0.85; }
+
+    .figure-block {
+      margin-bottom: 12px;
+      border-radius: var(--radius-btn);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+    }
+
+    .figure-block img {
+      width: 100%;
+      display: block;
+      min-height: 80px;
+      object-fit: contain;
+    }
+
+    .figure-block img.hidden,
+    .image-choice-btn img.hidden {
+      display: none;
+    }
+
+    .figure-loading {
+      padding: 24px 16px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .figure-loading.hidden { display: none; }
+
+    .choice-iframe {
+      width: 100%;
+      height: 110px;
+      border: 0;
+      display: block;
+      background: var(--bg-surface);
+    }
+
+    .figure-iframe {
+      width: 100%;
+      height: 280px;
+      border: 0;
+      display: block;
+      background: var(--bg-surface);
+    }
+
+    .figure-error {
+      padding: 16px;
+      text-align: center;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .figure-error a { color: var(--accent-light); }
+
+    .feedback-panel {
+      margin-top: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 14px;
+    }
+
+    .feedback-panel.correct { border-color: rgba(29, 158, 117, 0.4); }
+    .feedback-panel.incorrect { border-color: rgba(239, 68, 68, 0.4); }
+    .feedback-title { font-weight: 700; margin-bottom: 6px; }
+    .feedback-title.correct { color: var(--green); }
+    .feedback-title.incorrect { color: var(--red); }
+
+    .btn-next, .btn-back-chapter {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-next { background: var(--accent); color: #fff; border: none; }
+    .btn-back-chapter {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .loading-overlay, .error-card {
+      margin: 20px;
+      padding: 32px 20px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .btn-retry-init {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .practice-result { text-align: center; padding: 24px 16px; animation: fadeIn 0.3s ease; }
+    .result-emoji { font-size: 2.5rem; margin-bottom: 8px; }
+    .result-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+    .result-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+    .result-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
+    .result-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    .result-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+    .result-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--amber);
+      margin-bottom: 24px;
+    }
+    .btn-result-primary, .btn-result-secondary {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .btn-result-primary { background: var(--accent); color: #fff; border: none; }
+    .btn-result-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--nav-height);
+      display: flex;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      z-index: 30;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      text-decoration: none;
+    }
+
+    .nav-item .nav-icon { font-size: 1.25rem; }
+    .nav-item.active { color: var(--accent); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <a class="header-btn" id="headerBack" href="index.html" data-i18n="back">← 戻る</a>
+      <span class="header-title" data-i18n="title">聴解</span>
+      <button class="header-icon" type="button" disabled aria-label="設定">⚙️</button>
+    </header>
+
+    <nav class="tab-bar">
+      <button class="tab active" data-tab="summary" type="button" data-i18n="tabSummary">まとめ問題</button>
+      <button class="tab" data-tab="drill" type="button" data-i18n="tabDrill">練習問題</button>
+    </nav>
+
+    <div id="loadingView" class="loading-overlay" hidden>
+      <div class="spinner"></div>
+      <p data-i18n="loading">読み込み中...</p>
+    </div>
+
+    <div id="errorView" class="error-card" hidden>
+      <p data-i18n="loadError">データを読み込めませんでした。</p>
+      <button class="btn-retry-init" type="button" onclick="init()" data-i18n="retry">再試行</button>
+    </div>
+
+    <div id="chapterView">
+      <section class="progress-section">
+        <div class="progress-bottom">
+          <span class="progress-label" id="modeLabel">まとめ問題</span>
+          <span class="progress-count" id="chapterCount">0 章</span>
+        </div>
+      </section>
+      <div class="content-block">
+        <p class="section-title" data-i18n="selectChapter">章を選んでください</p>
+        <div class="chapter-list" id="chapterList"></div>
+      </div>
+    </div>
+
+    <div id="figureView" class="hidden">
+      <nav class="ch-tab-bar" id="figureChTabs"></nav>
+      <section class="progress-section">
+        <div class="progress-bottom">
+          <span class="progress-label" id="figureModeLabel">図版問題</span>
+          <span class="progress-count" id="figureChapterCount">第1章</span>
+        </div>
+      </section>
+      <div class="content-block">
+        <button class="btn-back-chapter" id="btnBackParent" type="button">← 練習問題へ</button>
+        <div id="figureEmpty" class="figure-empty hidden" data-i18n="noFigureQuestions">この章に図版問題はありません</div>
+        <div class="block-card hidden" id="figurePreviewCard"></div>
+      </div>
+    </div>
+
+    <div id="quizView" class="hidden">
+      <nav class="ch-tab-bar hidden" id="quizFigureChTabs"></nav>
+      <section class="progress-section">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="quizProgressBar"></div>
+        </div>
+        <div class="progress-bottom">
+          <span class="progress-label" id="quizChapterLabel">第1章</span>
+          <span class="progress-count" id="quizProgressCount">1 / 10</span>
+        </div>
+      </section>
+      <div class="content-block">
+        <button class="btn-back-chapter" id="btnBackChapter" type="button" data-i18n="backChapter">← 章選択へ</button>
+        <div class="block-card" id="quizCard"></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span><span data-i18n="navHome">ホーム</span></a>
+    <span class="nav-item active"><span class="nav-icon">🎧</span><span data-i18n="navStudy">学習</span></span>
+    <button class="nav-item" type="button" onclick="alert(AppLang.st('historySoon'))"><span class="nav-icon">📊</span><span data-i18n="navHistory">履歴</span></button>
+    <button class="nav-item" type="button" data-open-settings><span class="nav-icon">⚙️</span><span data-i18n="navSettings">設定</span></button>
+  </nav>
+
+  <script src="js/app-settings.js"></script>
+  <script src="js/app-i18n-common.js"></script>
+  <script src="js/app-progress.js"></script>
+  <script>
+    const GAS_BASE = 'https://script.google.com/macros/s/AKfycbwjaswl5-q581vijF4IyQIGxAj85MTWH0b7GxIflXxSGULcKwY2K6-5ICZWYMKCMgpw2Q/exec';
+    const GAS_API_KEY = 'bb_prod_2026_xK9mN3vQ7rL8wP5j';
+    const API_LANG = () => AppLang.getApiLang();
+    const CHOICE_MARKS = ['①', '②', '③', '④'];
+
+    const i18n = AppI18n.mergeI18n({
+      ja: {
+        title: '聴解', tabSummary: 'まとめ問題', tabDrill: '練習問題',
+        tabFigure: '図版問題', backDrill: '← 練習問題へ', backSummary: '← まとめ問題へ', backFigure: '← 図版問題へ',
+        noFigureQuestions: 'この章に図版問題はありません',
+        startFigure: '問題を始める', figureTotal: '全{n}問',
+        selectChapter: '章を選んでください', chapter: '第{n}章',
+        questions: '{n}問', backChapter: '← 章選択へ', playAudio: '🔊 音声を聴く',
+        audioPrep: '音声機能は準備中です', script: 'スクリプト', choose: '答えを選んでください',
+        imageError: '図を読み込めませんでした',
+        imageLoading: '図を読み込み中...',
+        imageOpenDrive: 'Driveで開く',
+        imageOpenProxy: '画像を別タブで開く',
+        finish: '結果を見る', resultBack: '章選択へ',
+      },
+      en: {
+        title: 'Listening', tabSummary: 'Summary', tabDrill: 'Practice',
+        tabFigure: 'Figures', backDrill: '← Practice', backSummary: '← Summary', backFigure: '← Figures',
+        noFigureQuestions: 'No figure questions in this chapter',
+        startFigure: 'Start', figureTotal: '{n} questions',
+        selectChapter: 'Select a chapter', chapter: 'Ch.{n}',
+        questions: '{n} questions', backChapter: '← Chapters', playAudio: '🔊 Play audio',
+        audioPrep: 'Audio is coming soon', script: 'Script', choose: 'Choose your answer',
+        imageError: 'Could not load the figure',
+        imageLoading: 'Loading figure...',
+        imageOpenDrive: 'Open in Drive',
+        imageOpenProxy: 'Open image in new tab',
+        finish: 'See results', resultBack: 'Back to chapters',
+      },
+    });
+
+    const MOCK_SUMMARY = [
+      {
+        chapter: 1, question_type: '発音', instruction: 'CDを聞いてください。発音したのはどれですか。',
+        choices: ['ふと', 'ふとう', 'ふっとう', 'ふうとう'], answer: 4,
+        script: [{ speaker: 'ナレーター', text: 'ふうとう（封筒）' }],
+        image_file_id: null,
+      },
+    ];
+
+    const MOCK_DRILL = [
+      {
+        chapter: 1, section: 1, section_title: '発音について', question_type: '書き取り',
+        instruction: 'CDを聞いて書き取りましょう', choices: [], answer: null,
+        script: [{ speaker: 'ナレーター', text: 'まち（町）→マッチ' }],
+        image_file_id: null,
+      },
+    ];
+
+    const FIGURE_CHAPTERS = {
+      summary: [1, 2, 3, 4, 5],
+      drill: [1, 2, 3, 4],
+    };
+
+    let currentTab = 'summary';
+    let summaryData = [];
+    let drillData = [];
+    let view = 'chapters';
+    let quizSubMode = null;
+
+    let quizQuestions = [];
+    let quizIndex = 0;
+    let quizScore = 0;
+    let quizChapter = 0;
+    let quizAnswered = false;
+    let figureChapter = 1;
+
+    const t = (key, vars = {}) => AppLang.t(i18n, key, vars);
+
+    function applyI18n() {
+      AppI18n.applyI18n(i18n);
+    }
+
+    function extractDriveId(raw) {
+      if (!raw) return '';
+      const str = String(raw).trim();
+      const fromUrl = str.match(/(?:[?&]id=|\/d\/)([a-zA-Z0-9_-]+)/);
+      if (fromUrl) return fromUrl[1];
+      if (/^[a-zA-Z0-9_-]{10,}$/.test(str)) return str;
+      return '';
+    }
+
+    function gasImageUrl(fileId) {
+      const id = extractDriveId(fileId);
+      if (!id) return '';
+      const params = new URLSearchParams({
+        api_key: GAS_API_KEY,
+        category: 'listening',
+        type: 'image',
+        id,
+        lang: API_LANG(),
+      });
+      return `${GAS_BASE}?${params.toString()}`;
+    }
+
+    function imageCandidates(idOrUrl) {
+      const str = String(idOrUrl || '').trim();
+      if (!str) return [];
+      if (str.startsWith('http') && !str.includes('drive.google.com') && !str.includes('googleusercontent.com')) {
+        return [str];
+      }
+      const id = extractDriveId(str);
+      if (!id) return str.startsWith('http') ? [str] : [];
+      // Drive 直リンクは Cookie でブロックされるため GAS プロキシのみ使用
+      const gasUrl = gasImageUrl(id);
+      return gasUrl ? [gasUrl] : [];
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderFigureError(id) {
+      if (!id) {
+        return `<p class="figure-error hidden" data-figure-error>${t('imageError')}</p>`;
+      }
+      const proxyUrl = gasImageUrl(id);
+      const driveUrl = `https://drive.google.com/file/d/${id}/view`;
+      return `
+        <p class="figure-error hidden" data-figure-error>
+          ${t('imageError')}<br>
+          ${proxyUrl ? `<a href="${proxyUrl}" target="_blank" rel="noopener">${t('imageOpenProxy')}</a><br>` : ''}
+          <a href="${driveUrl}" target="_blank" rel="noopener">${t('imageOpenDrive')}</a>
+        </p>
+      `;
+    }
+
+    function renderFigureBlock(idOrUrl) {
+      const id = extractDriveId(idOrUrl);
+      if (!id) return '';
+      const candidates = imageCandidates(idOrUrl);
+      return `
+        <div class="figure-block" data-figure-block data-drive-id="${escapeHtml(id)}">
+          <div class="figure-loading" data-figure-loading>${t('imageLoading')}</div>
+          <img
+            class="figure-img hidden"
+            data-figure-img
+            alt="figure"
+            referrerpolicy="no-referrer"
+            data-candidates='${JSON.stringify(candidates)}'
+            data-candidate-index="0"
+            data-drive-id="${escapeHtml(id)}"
+          >
+          ${renderFigureError(id)}
+        </div>
+      `;
+    }
+
+    function renderImageChoiceGrid(imgs) {
+      return `
+        <div class="image-choices" id="choiceArea">
+          ${imgs.slice(0, 4).map((src, i) => {
+            const id = extractDriveId(src);
+            const candidates = imageCandidates(src);
+            return `
+            <button class="image-choice-btn" data-choice="${i}" type="button" data-drive-id="${escapeHtml(id)}">
+              <div class="figure-loading" data-figure-loading>${t('imageLoading')}</div>
+              <img
+                class="hidden"
+                data-figure-img
+                alt="${CHOICE_MARKS[i]}"
+                referrerpolicy="no-referrer"
+                data-candidates='${JSON.stringify(candidates)}'
+                data-candidate-index="0"
+                data-drive-id="${escapeHtml(id)}"
+              >
+              <div class="choice-num">${CHOICE_MARKS[i]}</div>
+              ${renderFigureError(id)}
+            </button>
+          `;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function bindImgCandidateFallback(img) {
+      const candidates = JSON.parse(img.dataset.candidates || '[]');
+      let idx = Number(img.dataset.candidateIndex || 0);
+
+      const showError = () => {
+        const holder = img.closest('[data-figure-block], .image-choice-btn');
+        const loading = holder?.querySelector('[data-figure-loading]');
+        if (loading) loading.classList.add('hidden');
+        img.classList.add('hidden');
+        const err = holder?.querySelector('[data-figure-error]');
+        if (err) err.classList.remove('hidden');
+      };
+
+      const tryNext = () => {
+        idx += 1;
+        if (idx < candidates.length) {
+          img.dataset.candidateIndex = String(idx);
+          img.src = candidates[idx];
+          return;
+        }
+        showError();
+      };
+
+      img.onerror = tryNext;
+      img.addEventListener('load', () => {
+        if (img.naturalWidth === 0) {
+          tryNext();
+          return;
+        }
+        const holder = img.closest('[data-figure-block], .image-choice-btn');
+        const loading = holder?.querySelector('[data-figure-loading]');
+        if (loading) loading.classList.add('hidden');
+        const err = holder?.querySelector('[data-figure-error]');
+        if (err) err.classList.add('hidden');
+        img.classList.remove('hidden');
+      });
+    }
+
+    function loadFigureImage(holder) {
+      const id = holder.dataset.driveId;
+      if (!id) return;
+
+      const img = holder.querySelector('[data-figure-img]');
+      if (!img?.dataset.candidates) return;
+
+      bindImgCandidateFallback(img);
+      const candidates = JSON.parse(img.dataset.candidates || '[]');
+      if (candidates.length) {
+        img.src = candidates[0];
+      }
+    }
+
+    function initImageFallbacks() {
+      const holders = [
+        ...document.querySelectorAll('[data-figure-block][data-drive-id]'),
+        ...document.querySelectorAll('.image-choice-btn[data-drive-id]'),
+      ];
+      holders.forEach((holder) => { loadFigureImage(holder); });
+    }
+
+    function isNumericLabelChoice(choices) {
+      if (!choices?.length) return false;
+      return choices.every((choice) => /^[１２３４1-4]$/.test(String(choice).trim()) || /^[①②③④]$/.test(String(choice).trim()));
+    }
+
+    function renderNumberedChoices() {
+      return `
+        <div class="choices-list" id="choiceArea">
+          ${CHOICE_MARKS.map((mark, i) => `
+            <button class="choice-btn" data-choice="${i}" type="button">
+              <span class="choice-num">${mark}</span>
+              <span>${mark}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function renderTextChoices(textChoices) {
+      return `
+        <div class="choices-list" id="choiceArea">
+          ${textChoices.slice(0, 4).map((c, i) => `
+            <button class="choice-btn" data-choice="${i}" type="button">
+              <span class="choice-num">${CHOICE_MARKS[i]}</span>
+              <span>${escapeHtml(c)}</span>
+            </button>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    function parseImageSources(raw) {
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
+      const str = String(raw).trim();
+      if (!str) return [];
+      if (str.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(str);
+          if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+        } catch (err) { /* single value */ }
+      }
+      return [str];
+    }
+
+    function isImageQuestion(q) {
+      return Boolean(parseImageSources(q.image_file_id).length);
+    }
+
+    function getActiveData() {
+      return currentTab === 'summary' ? summaryData : drillData;
+    }
+
+    function getChapterQuestions(data, chapter, { figureOnly = false, excludeFigure = false } = {}) {
+      return data.filter((q) => {
+        if ((q.chapter || 1) !== chapter) return false;
+        const hasFigure = isImageQuestion(q);
+        if (figureOnly) return hasFigure;
+        if (excludeFigure) return !hasFigure;
+        return true;
+      });
+    }
+
+    function getChapters(data, { excludeFigure = false } = {}) {
+      const map = {};
+      data.forEach((q) => {
+        if (excludeFigure && isImageQuestion(q)) return;
+        const ch = q.chapter || 1;
+        map[ch] = (map[ch] || 0) + 1;
+      });
+      return Object.keys(map).map(Number).sort((a, b) => a - b).map((ch) => ({
+        chapter: ch,
+        count: map[ch],
+      }));
+    }
+
+    function getFigureChapters() {
+      return FIGURE_CHAPTERS[currentTab] || [1, 2, 3, 4];
+    }
+
+    function getFigureData() {
+      return currentTab === 'summary' ? summaryData : drillData;
+    }
+
+    function getBackToTabLabel() {
+      return currentTab === 'summary' ? t('backSummary') : t('backDrill');
+    }
+
+    function getFigureQuestionCount(chapter) {
+      return getChapterQuestions(getFigureData(), chapter, { figureOnly: true }).length;
+    }
+
+    function getTotalFigureQuestions() {
+      return getFigureData().filter(isImageQuestion).length;
+    }
+
+    function getProgressMode() {
+      if (quizSubMode === 'figure') {
+        return currentTab === 'summary' ? 'figure-summary' : 'figure-drill';
+      }
+      return currentTab;
+    }
+
+    function renderFigureChTabs(containerId, activeChapter) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      container.innerHTML = getFigureChapters().map((ch) => `
+        <button class="ch-tab${ch === activeChapter ? ' active' : ''}" type="button" data-figure-ch="${ch}">CH${ch}</button>
+      `).join('');
+      container.querySelectorAll('[data-figure-ch]').forEach((btn) => {
+        btn.addEventListener('click', () => selectFigureChapter(Number(btn.dataset.figureCh)));
+      });
+    }
+
+    function selectFigureChapter(chapter) {
+      figureChapter = chapter;
+      if (view === 'quiz' && quizSubMode === 'figure') {
+        startFigureQuiz(chapter);
+        return;
+      }
+      renderFigureView();
+    }
+
+    function renderFigurePreview() {
+      const questions = getChapterQuestions(getFigureData(), figureChapter, { figureOnly: true });
+      const emptyEl = document.getElementById('figureEmpty');
+      const previewCard = document.getElementById('figurePreviewCard');
+
+      document.getElementById('figureChapterCount').textContent = t('chapter', { n: figureChapter });
+      document.getElementById('figureModeLabel').textContent = t('tabFigure');
+      document.getElementById('btnBackParent').textContent = getBackToTabLabel();
+
+      if (!questions.length) {
+        emptyEl.classList.remove('hidden');
+        previewCard.classList.add('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      previewCard.classList.remove('hidden');
+      previewCard.innerHTML = `
+        <div class="instruction-box">${t('chapter', { n: figureChapter })} — ${t('figureTotal', { n: questions.length })}</div>
+        <div class="question-area">
+          <button class="btn-next" id="btnStartFigure" type="button">${t('startFigure')}</button>
+        </div>
+      `;
+      document.getElementById('btnStartFigure').addEventListener('click', () => startFigureQuiz(figureChapter));
+    }
+
+    function showFigureView() {
+      view = 'figure';
+      quizSubMode = 'figure';
+      figureChapter = getFigureChapters().find((ch) => getFigureQuestionCount(ch) > 0) || getFigureChapters()[0];
+
+      document.getElementById('headerBack').href = '#';
+      document.getElementById('headerBack').textContent = getBackToTabLabel();
+      document.getElementById('btnBackParent').textContent = getBackToTabLabel();
+      document.getElementById('chapterView').classList.add('hidden');
+      document.getElementById('quizView').classList.add('hidden');
+      document.getElementById('figureView').classList.remove('hidden');
+
+      renderFigureChTabs('figureChTabs', figureChapter);
+      renderFigurePreview();
+      window.scrollTo(0, 0);
+    }
+
+    function renderFigureView() {
+      renderFigureChTabs('figureChTabs', figureChapter);
+      renderFigurePreview();
+    }
+
+    async function fetchListening(type) {
+      const url = `${GAS_BASE}?api_key=${encodeURIComponent(GAS_API_KEY)}&category=listening&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(API_LANG())}&limit=300`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      const json = await res.json();
+      if (json.status === 'success' && json.data?.length) return json.data;
+      throw new Error('empty');
+    }
+
+    function showLoading() {
+      document.getElementById('loadingView').hidden = false;
+      document.getElementById('errorView').hidden = true;
+      document.getElementById('chapterView').classList.add('hidden');
+      document.getElementById('figureView').classList.add('hidden');
+      document.getElementById('quizView').classList.add('hidden');
+    }
+
+    function hideLoading() {
+      document.getElementById('loadingView').hidden = true;
+    }
+
+    function showError() {
+      document.getElementById('loadingView').hidden = true;
+      document.getElementById('errorView').hidden = false;
+      document.getElementById('chapterView').classList.add('hidden');
+      document.getElementById('figureView').classList.add('hidden');
+      document.getElementById('quizView').classList.add('hidden');
+    }
+
+    function renderChapterList() {
+      const data = getActiveData();
+      const chapters = getChapters(data, { excludeFigure: true });
+      document.getElementById('modeLabel').textContent =
+        currentTab === 'summary' ? t('tabSummary') : t('tabDrill');
+
+      const figureTotal = getTotalFigureQuestions();
+      let html = `
+        <div class="chapter-card figure-entry" data-mode="figure">
+          <div class="chapter-left">
+            <div class="chapter-num">🖼</div>
+            <div>
+              <div class="chapter-name">${t('tabFigure')}</div>
+              <div class="chapter-meta">${t('figureTotal', { n: figureTotal })}</div>
+            </div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+      `;
+
+      html += chapters.map((ch) => `
+        <div class="chapter-card" data-chapter="${ch.chapter}">
+          <div class="chapter-left">
+            <div class="chapter-num">${ch.chapter}</div>
+            <div>
+              <div class="chapter-name">${t('chapter', { n: ch.chapter })}</div>
+              <div class="chapter-meta">${t('questions', { n: ch.count })}</div>
+            </div>
+          </div>
+          <span class="chapter-arrow">›</span>
+        </div>
+      `).join('');
+
+      document.getElementById('chapterCount').textContent = `${chapters.length + 1} ${t('items')}`;
+      document.getElementById('chapterList').innerHTML = html;
+
+      document.querySelector('[data-mode="figure"]').addEventListener('click', showFigureView);
+      document.getElementById('chapterList').querySelectorAll('[data-chapter]').forEach((card) => {
+        card.addEventListener('click', () => startQuiz(Number(card.dataset.chapter)));
+      });
+    }
+
+    function showChapterView() {
+      view = 'chapters';
+      quizSubMode = null;
+      document.getElementById('headerBack').href = 'index.html';
+      document.getElementById('headerBack').textContent = t('back');
+      document.getElementById('chapterView').classList.remove('hidden');
+      document.getElementById('figureView').classList.add('hidden');
+      document.getElementById('quizView').classList.add('hidden');
+      document.getElementById('quizFigureChTabs').classList.add('hidden');
+      renderChapterList();
+    }
+
+    function startQuiz(chapter) {
+      quizChapter = chapter;
+      quizSubMode = null;
+      quizQuestions = getChapterQuestions(getActiveData(), chapter, { excludeFigure: true });
+      quizIndex = 0;
+      quizScore = 0;
+      quizAnswered = false;
+      view = 'quiz';
+
+      document.getElementById('chapterView').classList.add('hidden');
+      document.getElementById('figureView').classList.add('hidden');
+      document.getElementById('quizView').classList.remove('hidden');
+      document.getElementById('quizFigureChTabs').classList.add('hidden');
+      document.getElementById('quizChapterLabel').textContent = t('chapter', { n: chapter });
+      document.getElementById('btnBackChapter').textContent = t('backChapter');
+      document.getElementById('headerBack').href = 'index.html';
+      document.getElementById('headerBack').textContent = t('back');
+      renderQuestion();
+    }
+
+    function startFigureQuiz(chapter) {
+      quizChapter = chapter;
+      figureChapter = chapter;
+      quizSubMode = 'figure';
+      quizQuestions = getChapterQuestions(getFigureData(), chapter, { figureOnly: true });
+      quizIndex = 0;
+      quizScore = 0;
+      quizAnswered = false;
+      view = 'quiz';
+
+      document.getElementById('chapterView').classList.add('hidden');
+      document.getElementById('figureView').classList.add('hidden');
+      document.getElementById('quizView').classList.remove('hidden');
+      document.getElementById('quizFigureChTabs').classList.remove('hidden');
+      document.getElementById('quizChapterLabel').textContent = `${t('tabFigure')} · ${t('chapter', { n: chapter })}`;
+      document.getElementById('btnBackChapter').textContent = t('backFigure');
+      document.getElementById('headerBack').href = '#';
+      document.getElementById('headerBack').textContent = t('backFigure');
+      renderFigureChTabs('quizFigureChTabs', chapter);
+      renderQuestion();
+    }
+
+    function updateQuizProgress() {
+      const total = quizQuestions.length || 1;
+      const current = quizIndex + 1;
+      document.getElementById('quizProgressCount').textContent = `${current} / ${total}`;
+      document.getElementById('quizProgressBar').style.width = `${(current / total) * 100}%`;
+    }
+
+    function renderScript(script) {
+      if (!script?.length) return '';
+      const lines = script.map((line) => `
+        <div class="script-line">
+          <span class="script-speaker">${line.speaker || ''}</span>
+          ${line.text || ''}
+        </div>
+      `).join('');
+      return `
+        <div class="script-box">
+          <div class="script-label">${t('script')}</div>
+          ${lines}
+        </div>
+      `;
+    }
+
+    function renderChoices(q) {
+      const imgs = parseImageSources(q.image_file_id);
+      const rawChoices = (q.choices || []).filter((c) => c !== null && c !== undefined && String(c).trim() !== '');
+      const numericLabels = isNumericLabelChoice(rawChoices);
+      const textChoices = numericLabels ? [] : rawChoices;
+
+      if (imgs.length >= 4) {
+        return renderImageChoiceGrid(imgs);
+      }
+
+      let html = '';
+      if (imgs.length >= 1) {
+        html += renderFigureBlock(imgs[0]);
+      }
+      html += textChoices.length ? renderTextChoices(textChoices) : renderNumberedChoices();
+      return html;
+    }
+
+    function bindChoiceHandlers(q) {
+      const area = document.getElementById('choiceArea');
+      if (!area) return;
+      area.querySelectorAll('[data-choice]').forEach((btn) => {
+        btn.addEventListener('click', () => selectAnswer(Number(btn.dataset.choice), q));
+      });
+    }
+
+    function renderQuestion() {
+      if (!quizQuestions.length) {
+        document.getElementById('quizCard').innerHTML = `
+          <div class="figure-empty">${t('noFigureQuestions')}</div>
+        `;
+        updateQuizProgress();
+        return;
+      }
+      const q = quizQuestions[quizIndex];
+      const label = [
+        q.question_major,
+        q.question_mid != null ? String(q.question_mid) : '',
+        q.question_no,
+        q.question_minor,
+      ].filter(Boolean).join(' ');
+
+      document.getElementById('quizCard').innerHTML = `
+        <div class="badge-row">
+          <span class="badge type">${q.question_type || ''}</span>
+          ${q.section_title ? `<span class="badge">${q.section_title}</span>` : ''}
+          ${label ? `<span class="badge">${label}</span>` : ''}
+        </div>
+        <div class="instruction-box">${q.instruction || ''}</div>
+        <div class="audio-row">
+          <button class="audio-btn" id="audioBtn" type="button">${t('playAudio')}</button>
+        </div>
+        ${renderScript(q.script)}
+        <div class="question-area">
+          ${renderChoices(q)}
+          <div id="feedbackArea"></div>
+        </div>
+      `;
+
+      document.getElementById('audioBtn').addEventListener('click', () => alert(t('audioPrep')));
+      bindChoiceHandlers(q);
+      initImageFallbacks();
+      updateQuizProgress();
+    }
+
+    function markChoices(index, answer, q) {
+      const isImageGrid = document.querySelector('.image-choice-btn');
+      const selector = isImageGrid ? '.image-choice-btn' : '.choice-btn';
+      document.querySelectorAll(`#choiceArea ${selector}`).forEach((btn, i) => {
+        btn.disabled = true;
+        if (answer && i + 1 === answer) btn.classList.add('correct');
+        else if (i === index) btn.classList.add('wrong');
+      });
+    }
+
+    function selectAnswer(index, q) {
+      if (quizAnswered) return;
+      quizAnswered = true;
+      const answer = q.answer;
+      const hasAnswer = Number.isInteger(answer) && answer >= 1;
+      const isCorrect = hasAnswer && index + 1 === answer;
+      if (isCorrect) quizScore += 1;
+
+      markChoices(index, hasAnswer ? answer : null, q);
+
+      const isLast = quizIndex >= quizQuestions.length - 1;
+      document.getElementById('feedbackArea').innerHTML = `
+        <div class="feedback-panel ${hasAnswer ? (isCorrect ? 'correct' : 'incorrect') : ''}">
+          ${hasAnswer ? `<div class="feedback-title ${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? t('correct') : t('incorrect')}</div>` : ''}
+          ${hasAnswer && !isCorrect ? `<div>${t('correctAnswer')}: ${CHOICE_MARKS[answer - 1]}</div>` : ''}
+          <button class="btn-next" id="btnNext" type="button">${isLast ? t('finish') : t('next')}</button>
+        </div>
+      `;
+      document.getElementById('btnNext').addEventListener('click', goNextQuestion);
+    }
+
+    function goNextQuestion() {
+      if (quizIndex < quizQuestions.length - 1) {
+        quizIndex += 1;
+        quizAnswered = false;
+        renderQuestion();
+        return;
+      }
+      showResult();
+    }
+
+    function showResult() {
+      const total = quizQuestions.length;
+      const pct = total ? Math.round((quizScore / total) * 100) : 0;
+
+      if (total > 0 && typeof AppProgress !== 'undefined') {
+        AppProgress.recordSession({
+          module: 'listening',
+          mode: getProgressMode(),
+          chapter: quizChapter,
+          label: quizSubMode === 'figure'
+            ? `${t('tabFigure')} ${t('chapter', { n: quizChapter })}`
+            : t('chapter', { n: quizChapter }),
+          score: quizScore,
+          total,
+        });
+      }
+
+      document.getElementById('quizCard').innerHTML = `
+        <div class="practice-result">
+          <div class="result-emoji">${pct >= 70 ? '🎉' : '🎧'}</div>
+          <div class="result-title">${t('resultTitle')}</div>
+          <div class="result-score">${quizScore} / ${total}</div>
+          <div class="result-label">${t('chapter', { n: quizChapter })}</div>
+          <div class="result-bar-wrap"><div class="result-bar" id="resultBar"></div></div>
+          <div class="result-pct">${pct}%</div>
+          <button class="btn-result-primary" id="btnRetry" type="button">${t('resultRetry')}</button>
+          <button class="btn-result-secondary" id="btnResultBack" type="button">${t('resultBack')}</button>
+        </div>
+      `;
+      requestAnimationFrame(() => {
+        document.getElementById('resultBar').style.width = pct + '%';
+      });
+      document.getElementById('btnRetry').addEventListener('click', () => {
+        if (quizSubMode === 'figure') startFigureQuiz(quizChapter);
+        else startQuiz(quizChapter);
+      });
+      document.getElementById('btnResultBack').addEventListener('click', () => {
+        if (quizSubMode === 'figure') showFigureView();
+        else showChapterView();
+      });
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach((el) => {
+        el.classList.toggle('active', el.dataset.tab === tab);
+      });
+      if (view === 'quiz' || view === 'figure') showChapterView();
+      else renderChapterList();
+      window.scrollTo(0, 0);
+    }
+
+    async function init() {
+      showLoading();
+      applyI18n();
+      try {
+        [summaryData, drillData] = await Promise.all([
+          fetchListening('summary').catch(() => { console.warn('[listening] summary fallback'); return MOCK_SUMMARY; }),
+          fetchListening('drill').catch(() => { console.warn('[listening] drill fallback'); return MOCK_DRILL; }),
+        ]);
+        hideLoading();
+        showChapterView();
+      } catch (err) {
+        console.error('[listening] init', err);
+        summaryData = MOCK_SUMMARY;
+        drillData = MOCK_DRILL;
+        hideLoading();
+        showChapterView();
+      }
+    }
+
+    document.getElementById('btnBackChapter').addEventListener('click', () => {
+      if (quizSubMode === 'figure') showFigureView();
+      else showChapterView();
+    });
+
+    document.getElementById('btnBackParent').addEventListener('click', showChapterView);
+
+    document.getElementById('headerBack').addEventListener('click', (event) => {
+      if (view === 'figure') {
+        event.preventDefault();
+        showChapterView();
+      } else if (view === 'quiz' && quizSubMode === 'figure') {
+        event.preventDefault();
+        showFigureView();
+      }
+    });
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.tab !== currentTab) switchTab(tab.dataset.tab);
+      });
+    });
+
+    function refreshUiLang() {
+      applyI18n();
+      if (view === 'chapters') renderChapterList();
+      else if (view === 'figure') renderFigureView();
+      else if (view === 'quiz') {
+        if (quizSubMode === 'figure') {
+          document.getElementById('btnBackChapter').textContent = t('backFigure');
+          document.getElementById('headerBack').textContent = t('backFigure');
+          document.getElementById('quizChapterLabel').textContent = `${t('tabFigure')} · ${t('chapter', { n: quizChapter })}`;
+        } else {
+          document.getElementById('btnBackChapter').textContent = t('backChapter');
+          document.getElementById('headerBack').textContent = t('back');
+          document.getElementById('quizChapterLabel').textContent = t('chapter', { n: quizChapter });
+        }
+        if (document.getElementById('resultBar')) showResult();
+        else renderQuestion();
+      }
+    }
+
+    window.addEventListener('app:langchange', refreshUiLang);
+
+    document.addEventListener('DOMContentLoaded', () => { applyI18n(); init(); });
+  </script>
+</body>
+</html>

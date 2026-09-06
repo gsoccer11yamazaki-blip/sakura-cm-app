@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N3 — ホーム</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #060a0f;
+      --bg-card: #0d1117;
+      --bg-surface: #161b22;
+      --border: #21262d;
+      --text-primary: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #1D9E75;
+      --accent-light: #14b8a6;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --nav-height: 72px;
+      --color-border: var(--border);
+      --color-muted: var(--text-muted);
+      --color-danger: var(--red);
+      --color-success: var(--accent);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .logo {
+      font-size: clamp(1.05rem, 4vw, 1.2rem);
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.02em;
+    }
+
+    .logo span {
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 0.75em;
+      margin-left: 6px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-name {
+      font-size: clamp(0.75rem, 3vw, 0.85rem);
+      color: var(--text-muted);
+      max-width: 90px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .notify-btn {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .notify-btn:hover {
+      border-color: var(--accent);
+      transform: scale(1.05);
+    }
+
+    .notify-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      padding: 3px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      background: var(--bg-surface);
+      gap: 2px;
+    }
+
+    .lang-toggle-btn {
+      min-width: 36px;
+      padding: 6px 8px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .lang-toggle-btn.active {
+      background: rgba(20, 184, 166, 0.18);
+      color: var(--accent-light);
+    }
+
+    .notify-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      width: 8px;
+      height: 8px;
+      background: var(--red);
+      border-radius: 50%;
+      border: 2px solid var(--bg-surface);
+    }
+
+    /* Sections */
+    .section {
+      padding: 20px;
+    }
+
+    .section-title {
+      font-size: clamp(0.95rem, 3.5vw, 1.05rem);
+      font-weight: 600;
+      margin-bottom: 14px;
+      color: var(--text-primary);
+    }
+
+    /* Greeting */
+    .greeting {
+      padding-top: 24px;
+    }
+
+    .greeting h1 {
+      font-size: clamp(1.2rem, 5vw, 1.45rem);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .greeting-date {
+      font-size: clamp(0.82rem, 3.2vw, 0.9rem);
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+
+    .streak {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 999px;
+      font-size: clamp(0.82rem, 3.2vw, 0.9rem);
+      font-weight: 600;
+      color: var(--amber);
+    }
+
+    .streak strong {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(16px);
+      animation: fadeInUp 0.4s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Tasks */
+    .task-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .task-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .task-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    }
+
+    .task-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-btn);
+      display: grid;
+      place-items: center;
+      font-size: 1.3rem;
+      flex-shrink: 0;
+    }
+
+    .task-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .task-category {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+    }
+
+    .task-label {
+      font-size: clamp(0.88rem, 3.4vw, 0.95rem);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .task-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .btn-start {
+      padding: 8px 14px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.2s, transform 0.15s;
+      flex-shrink: 0;
+    }
+
+    .btn-start:hover {
+      background: var(--accent-light);
+      transform: scale(1.04);
+    }
+
+    .btn-start:active {
+      transform: scale(0.98);
+    }
+
+    /* Category list (always 1 column) */
+    .category-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .category-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow);
+    }
+
+    .category-card:hover {
+      transform: scale(1.02);
+      border-color: var(--accent);
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
+    }
+
+    .category-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-btn);
+      display: grid;
+      place-items: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+
+    .category-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .category-name {
+      font-size: clamp(0.88rem, 3.4vw, 0.95rem);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .category-count {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 6px;
+    }
+
+    .mastery-bar-wrap {
+      height: 4px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .mastery-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--nav-height);
+      display: flex;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      z-index: 30;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      text-decoration: none;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 500;
+      transition: color 0.2s;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: 'Noto Sans JP', sans-serif;
+    }
+
+    .nav-item .nav-icon {
+      font-size: 1.25rem;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item:hover:not(.active) {
+      color: var(--text-primary);
+    }
+
+    /* Category colors */
+    .c-amber { color: var(--amber); }
+    .c-blue { color: var(--blue); }
+    .c-accent { color: var(--accent); }
+    .c-purple { color: var(--purple); }
+    .c-teal { color: var(--accent-light); }
+    .c-red { color: var(--red); }
+
+    .bg-amber { background: rgba(245, 158, 11, 0.15); }
+    .bg-blue { background: rgba(59, 130, 246, 0.15); }
+    .bg-accent { background: rgba(29, 158, 117, 0.15); }
+    .bg-purple { background: rgba(139, 92, 246, 0.15); }
+    .bg-teal { background: rgba(20, 184, 166, 0.15); }
+    .bg-red { background: rgba(239, 68, 68, 0.15); }
+
+    .bar-amber { background: var(--amber); }
+    .bar-blue { background: var(--blue); }
+    .bar-accent { background: var(--accent); }
+    .bar-purple { background: var(--purple); }
+    .bar-teal { background: var(--accent-light); }
+    .bar-red { background: var(--red); }
+
+    .overall-progress {
+      margin-top: 14px;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .overall-progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    .overall-progress-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+
+    .overall-progress-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    .overall-progress-bar {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+
+    .btn-reset {
+      background: transparent;
+      border: 1px solid var(--color-border);
+      color: var(--color-muted);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-top: 12px;
+    }
+    .btn-reset:hover {
+      border-color: var(--color-danger);
+      color: var(--color-danger);
+    }
+
+    .overall-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-light));
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    .mastery-pct {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 4px;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .history-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .history-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-btn);
+      display: grid;
+      place-items: center;
+      font-size: 1.2rem;
+      flex-shrink: 0;
+    }
+
+    .history-body { flex: 1; min-width: 0; }
+
+    .history-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .history-meta {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .history-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--amber);
+      flex-shrink: 0;
+    }
+
+    .history-empty {
+      padding: 36px 20px;
+      text-align: center;
+      color: var(--text-muted);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      line-height: 1.7;
+      font-size: 0.9rem;
+      white-space: pre-line;
+    }
+
+    .progress-module-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .progress-module-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    .progress-module-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-btn);
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+    }
+
+    .progress-section-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin: 10px 0 8px;
+    }
+
+    .ch-progress-row {
+      display: grid;
+      grid-template-columns: 42px 1fr 44px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .ch-progress-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .ch-progress-bar-wrap {
+      height: 6px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .ch-progress-bar {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.5s ease;
+    }
+
+    .ch-progress-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .ch-progress-pct.done { color: var(--accent-light); }
+
+    .module-overall-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+    }
+
+    .home-view.hidden,
+    .history-view.hidden { display: none !important; }
+
+    .exam-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      border: 1px solid #3b82f6;
+      border-radius: var(--radius-card);
+      padding: 16px 18px;
+      cursor: pointer;
+      text-decoration: none;
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .exam-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.45);
+    }
+
+    .exam-card .exam-icon {
+      font-size: 2rem;
+      flex-shrink: 0;
+    }
+
+    .exam-card .exam-body { flex: 1; min-width: 0; }
+
+    .exam-card .exam-label {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .exam-card .exam-meta {
+      font-size: 0.78rem;
+      opacity: 0.9;
+    }
+
+    .exam-card .exam-arrow {
+      font-size: 1.2rem;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- HEADER -->
+    <header class="header">
+      <div class="logo">N3<span>JLPT</span></div>
+      <div class="header-right">
+        <span class="user-name" id="headerUserName"></span>
+        <div class="lang-toggle" id="headerLangToggle" role="group" aria-label="Language">
+          <button class="lang-toggle-btn active" type="button" data-set-lang="ja">JA</button>
+          <button class="lang-toggle-btn" type="button" data-set-lang="en">EN</button>
+        </div>
+        <button class="notify-btn" id="notifyBtn" aria-label="通知">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span class="notify-badge"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- HOME VIEW -->
+    <div id="homeView" class="home-view">
+    <section class="section greeting fade-in" style="animation-delay: 0s">
+      <h1 id="greetingText">
+        <span id="greetingPrefix"></span><span id="displayUserName" style="cursor:pointer; border-bottom:1px dashed #94A3B8;" title="クリックして名前を変更">山嵜</span><span id="greetingSuffix"></span>
+      </h1>
+      <p class="greeting-date" id="dateText"></p>
+      <div class="streak" id="streakText"></div>
+      <div class="overall-progress">
+        <div class="overall-progress-top">
+          <span class="overall-progress-label" id="overallProgressLabel">全体進捗</span>
+          <span class="overall-progress-pct" id="overallProgressPct">0%</span>
+        </div>
+        <div class="overall-progress-bar">
+          <div class="overall-progress-fill" id="overallProgressFill" style="width:0%"></div>
+        </div>
+      </div>
+      <!-- 習熟度リセットボタン -->
+      <div style="margin-top: 16px; padding: 12px 16px; border-top: 1px solid var(--color-border);">
+        <button type="button" id="btnResetProgress"
+          style="background:transparent; border:1px solid #E2E8F0; color:#64748B;
+                 padding:8px 14px; border-radius:8px; font-size:13px; cursor:pointer;">
+          🔄 習熟度をリセット
+        </button>
+        <div id="resetStatus" style="display:none; font-size:13px; margin-top:6px;"></div>
+      </div>
+    </section>
+
+    <!-- MOCK EXAM -->
+    <section class="section fade-in" style="animation-delay: 0.08s">
+      <a href="exam.html" class="exam-card">
+        <span class="exam-icon">📝</span>
+        <div class="exam-body">
+          <div class="exam-label" id="examCardLabel">JLPT N3 模擬試験</div>
+          <div class="exam-meta" id="examCardMeta">JLPT N3 130問 / 70分</div>
+        </div>
+        <span class="exam-arrow">→</span>
+      </a>
+    </section>
+
+    <!-- CATEGORY LIST -->
+    <section class="section fade-in" style="animation-delay: 0.1s">
+      <h2 class="section-title" id="categoryTitle"></h2>
+      <div class="category-list" id="categoryList"></div>
+    </section>
+
+    </div>
+
+    <!-- HISTORY VIEW -->
+    <div id="historyView" class="history-view hidden">
+      <section class="section">
+        <h2 class="section-title" id="historyTitle" data-i18n="progressTitle">進捗</h2>
+        <div class="history-list" id="historyList"></div>
+      </section>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-nav="home">
+      <span class="nav-icon">🏠</span>
+      <span data-i18n="navHome"></span>
+    </button>
+    <button class="nav-item" data-nav="settings" data-open-settings type="button">
+      <span class="nav-icon">⚙️</span>
+      <span data-i18n="navSettings"></span>
+    </button>
+  </nav>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/app-supabase.js"></script>
+  <script src="js/app-settings.js"></script>
+  <script src="js/app-progress.js"></script>
+  <script>
+    const getLang = () => AppLang.getUiLang();
+
+    const i18n = {
+      ja: {
+        greeting: 'おはようございます',
+        streak: '日連続',
+        streakLabel: '学習中',
+        tasksTitle: '今日の学習タスク',
+        examLabel: 'JLPT N3 模擬試験',
+        examMeta: 'JLPT N3 130問 / 70分',
+        categoryTitle: 'カテゴリから選ぶ',
+        start: '開始',
+        questions: '問',
+        about: '約',
+        minutes: '分',
+        navHome: 'ホーム',
+        navStudy: '学習',
+        navHistory: '履歴',
+        navSettings: '設定',
+        notify: '通知機能は準備中です',
+        navAlert: ' 画面へ移動（準備中）',
+        categoryAlert: ' カテゴリへ移動（準備中）',
+        taskAlert: '準備中です',
+        overallProgress: '全体進捗',
+        mastery: '習熟度',
+        progressTitle: '進捗',
+        notAttempted: '未',
+        attempts: '{n}回',
+        historyTitle: '進捗',
+        historyEmpty: 'まだ学習記録がありません。\n各分野で問題を解くと、進捗が表示されます。',
+        comingSoon: '準備中',
+        weekdays: ['日曜日', '月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日'],
+      },
+      en: {
+        greeting: 'Good morning',
+        streak: ' day streak',
+        streakLabel: 'learning',
+        tasksTitle: "Today's Tasks",
+        examLabel: 'JLPT N3 Mock Exam',
+        examMeta: 'JLPT N3 130 Qs / 70 min',
+        categoryTitle: 'Choose Category',
+        start: 'Start',
+        questions: ' Qs',
+        about: '~',
+        minutes: ' min',
+        navHome: 'Home',
+        navStudy: 'Study',
+        navHistory: 'History',
+        navSettings: 'Settings',
+        notify: 'Notifications coming soon',
+        navAlert: ' (coming soon)',
+        categoryAlert: ' category (coming soon)',
+        taskAlert: 'Coming soon',
+        overallProgress: 'Overall progress',
+        mastery: 'Mastery',
+        progressTitle: 'Progress',
+        notAttempted: '—',
+        attempts: '{n}x',
+        historyTitle: 'Progress',
+        historyEmpty: 'No records yet.\nComplete quizzes in each category to see progress here.',
+        comingSoon: 'Soon',
+        weekdays: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      },
+      vi: {
+        greeting: 'Chào buổi sáng',
+        streak: ' ngày liên tiếp',
+        streakLabel: 'đang học',
+        tasksTitle: 'Nhiệm vụ hôm nay',
+        examLabel: 'JLPT N3 模擬試験',
+        examMeta: 'JLPT N3 130問 / 70分',
+        categoryTitle: 'Chọn danh mục',
+        start: 'Bắt đầu',
+        questions: ' câu',
+        about: '~',
+        minutes: ' phút',
+        navHome: 'Trang chủ',
+        navStudy: 'Học',
+        navHistory: 'Lịch sử',
+        navSettings: 'Cài đặt',
+        notify: 'Thông báo sắp ra mắt',
+        navAlert: ' (sắp ra mắt)',
+        categoryAlert: ' (sắp ra mắt)',
+        taskAlert: 'Sắp ra mắt',
+        weekdays: ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'],
+      },
+      id: {
+        greeting: 'Selamat pagi',
+        streak: ' hari berturut-turut',
+        streakLabel: 'belajar',
+        tasksTitle: 'Tugas Hari Ini',
+        examLabel: 'JLPT N3 模擬試験',
+        examMeta: 'JLPT N3 130問 / 70分',
+        categoryTitle: 'Pilih Kategori',
+        start: 'Mulai',
+        questions: ' soal',
+        about: '~',
+        minutes: ' menit',
+        navHome: 'Beranda',
+        navStudy: 'Belajar',
+        navHistory: 'Riwayat',
+        navSettings: 'Pengaturan',
+        notify: 'Notifikasi segera hadir',
+        navAlert: ' (segera hadir)',
+        categoryAlert: ' (segera hadir)',
+        taskAlert: 'Segera hadir',
+        weekdays: ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'],
+      },
+    };
+
+    const mockUser = {
+      name: '山崎',
+      level: 'N3',
+      streak: 12,
+      progress: 68,
+      weakPoints: ['読解', '助詞'],
+    };
+
+    const mockCategories = [
+      { id: 'vocab', name: '語彙', icon: '📚', color: 'amber', count: 320 },
+      { id: 'grammar', name: '文法', icon: '✏️', color: 'blue', count: 180 },
+      { id: 'kanji', name: '漢字', icon: '🈳', color: 'accent', count: 150 },
+      { id: 'reading', name: '読解', icon: '📖', color: 'purple', count: 90 },
+      { id: 'listening', name: '聴解', icon: '🎧', color: 'teal', count: 75 },
+    ];
+
+    const categoryMap = {
+      '語彙': 'vocab_flashcard.html',
+      '文法': 'grammar.html',
+      '漢字': 'kanji.html',
+      '読解': 'reading.html',
+      '聴解': 'listening.html',
+    };
+
+    let currentHomeTab = 'home';
+
+    const t = (key) => AppLang.t(i18n, key);
+
+    function formatDate(date) {
+      if (getLang() === 'ja') {
+        const y = date.getFullYear();
+        const m = date.getMonth() + 1;
+        const d = date.getDate();
+        const wd = t('weekdays')[date.getDay()];
+        return `${y}年${m}月${d}日 ${wd}`;
+      }
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
+      });
+    }
+
+    function applyI18n() {
+      document.querySelectorAll('[data-i18n]').forEach((el) => {
+        el.textContent = t(el.dataset.i18n);
+      });
+    }
+
+    function renderExamCard() {
+      document.getElementById('examCardLabel').textContent = t('examLabel');
+      document.getElementById('examCardMeta').textContent = t('examMeta');
+    }
+
+    // ── ユーザー名管理 ──
+    const USER_NAME_KEY = 'bb_user_name';
+
+    function loadUserName() {
+      return localStorage.getItem(USER_NAME_KEY) || '山嵜';
+    }
+
+    function saveUserName(name) {
+      localStorage.setItem(USER_NAME_KEY, name);
+    }
+
+    function applyUserName() {
+      const name = loadUserName();
+      const el = document.getElementById('displayUserName');
+      if (el) el.textContent = name;
+      const headerEl = document.getElementById('headerUserName');
+      if (headerEl) headerEl.textContent = name;
+    }
+
+    function renderGreeting() {
+      applyUserName();
+      if (getLang() === 'ja') {
+        document.getElementById('greetingPrefix').textContent = `${t('greeting')}、`;
+        document.getElementById('greetingSuffix').textContent = 'さん 👋';
+      } else {
+        document.getElementById('greetingPrefix').textContent = `${t('greeting')}, `;
+        document.getElementById('greetingSuffix').textContent = ' 👋';
+      }
+      document.getElementById('dateText').textContent = formatDate(new Date());
+      const streak = AppProgress.getStreak();
+      document.getElementById('streakText').innerHTML =
+        `🔥 <strong>${streak}</strong>${t('streak')} ${t('streakLabel')}`;
+
+      const overall = AppProgress.getOverallMastery();
+      document.getElementById('overallProgressLabel').textContent = t('overallProgress');
+      document.getElementById('overallProgressPct').textContent = `${overall}%`;
+      document.getElementById('overallProgressFill').style.width = `${overall}%`;
+    }
+
+    function getCategoryName(cat) {
+      if (cat.id && AppProgress.MODULE_META[cat.id]) {
+        const meta = AppProgress.getModuleMeta(cat.id);
+        return getLang() === 'en' ? meta.en : meta.ja;
+      }
+      return cat.name;
+    }
+
+    function renderCategories() {
+      document.getElementById('categoryTitle').textContent = t('categoryTitle');
+      const list = document.getElementById('categoryList');
+
+      list.innerHTML = mockCategories.map((cat) => {
+        const mastery = cat.id ? AppProgress.getMastery(cat.id) : 0;
+        const displayName = getCategoryName(cat);
+        return `
+        <div class="category-card" data-category="${cat.name}">
+          <div class="category-icon bg-${cat.color}">${cat.icon}</div>
+          <div class="category-body">
+            <div class="category-name c-${cat.color}">${displayName}</div>
+            <div class="category-count">${cat.count}${t('questions')}</div>
+            <div class="mastery-pct">${t('mastery')} ${mastery}%</div>
+            <div class="mastery-bar-wrap">
+              <div class="mastery-bar bar-${cat.color}" style="width: ${mastery}%"></div>
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+
+      list.querySelectorAll('.category-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const dest = categoryMap[card.dataset.category];
+          if (dest && dest !== '#') {
+            location.href = dest;
+          } else {
+            alert(card.dataset.category + (getLang() === 'ja' ? '（準備中）' : ' (coming soon)'));
+          }
+        });
+      });
+    }
+
+    function renderChProgressRow(label, progress, color) {
+      const pctText = progress.done ? `${progress.pct}%` : t('notAttempted');
+      const barWidth = progress.done ? progress.pct : 0;
+      return `
+        <div class="ch-progress-row">
+          <span class="ch-progress-label">${label}</span>
+          <div class="ch-progress-bar-wrap">
+            <div class="ch-progress-bar bar-${color}" style="width:${barWidth}%"></div>
+          </div>
+          <span class="ch-progress-pct${progress.done ? ' done' : ''}">${pctText}</span>
+        </div>
+      `;
+    }
+
+    function renderProgressModule(moduleId) {
+      const lang = getLang();
+      const meta = AppProgress.getModuleMeta(moduleId);
+      const name = lang === 'en' ? meta.en : meta.ja;
+      let html = `
+        <div class="progress-module-card">
+          <div class="progress-module-header">
+            <div class="progress-module-icon bg-${meta.color}">${meta.icon}</div>
+            <span>${name}</span>
+          </div>
+      `;
+
+      AppProgress.getModuleSections(moduleId).forEach((section) => {
+        const sectionLabel = lang === 'en' ? section.en : section.ja;
+        html += `<div class="progress-section-label">${sectionLabel}</div>`;
+
+        if (section.comingSoon) {
+          html += renderChProgressRow(t('comingSoon'), { done: false, pct: 0 }, meta.color);
+          return;
+        }
+
+        AppProgress.getSectionRows(section).forEach((item) => {
+          const rowLabel = AppProgress.formatItemLabel(section.itemType, item, lang);
+          const prog = AppProgress.getItemProgress(moduleId, section.mode, item);
+          html += renderChProgressRow(rowLabel, prog, meta.color);
+        });
+      });
+
+      html += '</div>';
+      return html;
+    }
+
+    function renderProgress() {
+      document.getElementById('historyTitle').textContent = t('progressTitle');
+      const list = document.getElementById('historyList');
+      const html = AppProgress.getProgressCategories()
+        .map((moduleId) => renderProgressModule(moduleId))
+        .join('');
+
+      const hasAny = AppProgress.getRecentSessions(1).length > 0;
+      if (!hasAny) {
+        list.innerHTML = `<div class="history-empty">${t('historyEmpty')}</div>${html}`;
+        return;
+      }
+
+      list.innerHTML = html;
+    }
+
+    function switchHomeTab(tab) {
+      currentHomeTab = tab;
+      const isHome = tab === 'home';
+      document.getElementById('homeView').classList.toggle('hidden', !isHome);
+      document.getElementById('historyView').classList.toggle('hidden', isHome);
+
+      document.querySelectorAll('.bottom-nav .nav-item').forEach((item) => {
+        item.classList.toggle('active', item.dataset.nav === tab);
+      });
+
+      if (isHome) {
+        renderGreeting();
+        renderExamCard();
+        renderCategories();
+        applyI18n();
+      } else if (tab === 'history') {
+        renderProgress();
+      }
+      window.scrollTo(0, 0);
+    }
+
+    function initNav() {
+      document.querySelectorAll('.nav-item').forEach((item) => {
+        item.addEventListener('click', () => {
+          const nav = item.dataset.nav;
+          if (nav === 'home') {
+            switchHomeTab('home');
+            return;
+          }
+          if (nav === 'history') {
+            switchHomeTab('history');
+            return;
+          }
+          if (nav === 'settings') return;
+          const label = item.querySelector('[data-i18n]').textContent;
+          alert(label + t('navAlert'));
+        });
+      });
+    }
+
+    function refreshUi() {
+      applyI18n();
+      if (currentHomeTab === 'history') {
+        renderProgress();
+      } else {
+        renderGreeting();
+        renderExamCard();
+        renderCategories();
+      }
+    }
+
+    window.addEventListener('app:langchange', refreshUi);
+
+    document.getElementById('btnResetProgress')?.addEventListener('click', () => {
+      const confirmed = confirm('習熟度データをリセットしますか？\nこの操作は元に戻せません。');
+      if (!confirmed) return;
+
+      const statusEl = document.getElementById('resetStatus');
+      statusEl.style.display = 'block';
+      statusEl.style.color = '#64748B';
+      statusEl.textContent = 'リセット中...';
+
+      try {
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (
+            key.includes('progress') ||
+            key.includes('kanji') ||
+            key.includes('vocab') ||
+            key.includes('grammar') ||
+            key.includes('reading') ||
+            key.includes('listening') ||
+            key.includes('score') ||
+            key.includes('mastery')
+          )) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+
+        if (typeof AppProgress !== 'undefined' && AppProgress.resetAll) {
+          AppProgress.resetAll();
+        }
+
+        statusEl.style.color = '#16A34A';
+        statusEl.textContent = '✅ リセット完了。ページを再読み込みします...';
+        setTimeout(() => location.reload(), 2000);
+
+      } catch (err) {
+        statusEl.style.color = '#DC2626';
+        statusEl.textContent = '❌ エラー: ' + err.message;
+      }
+    });
+
+    document.getElementById('displayUserName')?.addEventListener('click', () => {
+      const current = loadUserName();
+      const newName = prompt('名前を入力してください:', current);
+      if (newName && newName.trim()) {
+        saveUserName(newName.trim());
+        applyUserName();
+      }
+    });
+
+    window.addEventListener('app:progresschange', () => {
+      if (currentHomeTab === 'history') renderProgress();
+      else {
+        renderGreeting();
+        renderExamCard();
+        renderCategories();
+      }
+    });
+
+    document.getElementById('notifyBtn').addEventListener('click', () => {
+      alert(t('notify'));
+    });
+
+    applyI18n();
+    renderGreeting();
+    renderExamCard();
+    renderCategories();
+    initNav();
+  </script>
+</body>
+</html>

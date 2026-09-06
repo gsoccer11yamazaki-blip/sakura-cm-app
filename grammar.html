@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N3 — 文法</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #060a0f;
+      --bg-card: #0d1117;
+      --bg-surface: #161b22;
+      --border: #21262d;
+      --text-primary: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #1D9E75;
+      --accent-light: #14b8a6;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --nav-height: 72px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 6px 4px;
+      min-width: 44px;
+      text-decoration: none;
+    }
+
+    .header-btn:hover { color: var(--text-primary); }
+
+    .header-title {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .header-icon {
+      font-size: 1.2rem;
+      background: none;
+      border: none;
+      cursor: default;
+      padding: 6px;
+      opacity: 0.5;
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-primary);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    #practiceSection { display: none; }
+
+    .progress-section { padding: 16px 20px 8px; }
+
+    .progress-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .progress-label { font-size: 0.82rem; color: var(--text-muted); }
+
+    .progress-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .mode-switcher {
+      display: flex;
+      gap: 8px;
+      padding: 4px 20px 12px;
+      position: sticky;
+      top: 53px;
+      z-index: 15;
+      background: var(--bg-primary);
+    }
+
+    .mode-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 12px 10px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-muted);
+      transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--bg-card);
+      border-color: var(--accent);
+      color: var(--text-primary);
+      box-shadow: var(--shadow);
+    }
+
+    .mode-btn.active.flashcard-mode { border-color: var(--amber); }
+    .mode-btn.active.flashcard-mode .mode-label { color: var(--amber); }
+    .mode-btn.active.voice-mode { border-color: var(--accent); }
+    .mode-btn.active.voice-mode .mode-label { color: var(--accent); }
+
+    .mode-badge {
+      display: none;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--amber);
+      flex-shrink: 0;
+    }
+
+    .mode-badge.show { display: block; }
+
+    .content-block { padding: 0 20px 16px; }
+    .content-block.hidden { display: none; }
+
+    .block-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+    }
+
+    .card-area {
+      position: relative;
+      min-height: 280px;
+    }
+
+    .card-wrapper {
+      width: 100%;
+      height: 280px;
+      perspective: 1000px;
+      position: relative;
+      touch-action: pan-y;
+      cursor: grab;
+    }
+
+    .card-wrapper.dragging { cursor: grabbing; }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.4s ease;
+    }
+
+    .card-inner.flipped { transform: rotateY(180deg); }
+
+    .card-inner.slide-out-left { animation: slideOutLeft 0.3s ease forwards; }
+    .card-inner.slide-out-right { animation: slideOutRight 0.3s ease forwards; }
+    .card-inner.slide-in { animation: slideIn 0.3s ease forwards; }
+
+    @keyframes slideOutLeft {
+      to { transform: translateX(-120%) rotate(-8deg); opacity: 0; }
+    }
+
+    @keyframes slideOutRight {
+      to { transform: translateX(120%) rotate(8deg); opacity: 0; }
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(60px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .card-back { transform: rotateY(180deg); }
+
+    .swipe-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-card);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 5;
+    }
+
+    .swipe-overlay.know { background: rgba(29, 158, 117, 0.25); }
+    .swipe-overlay.retry { background: rgba(239, 68, 68, 0.25); }
+
+    .card-front-content {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 10px;
+    }
+
+    .day-badge {
+      display: inline-block;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .grammar-main {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.35;
+      padding: 0 8px;
+    }
+
+    .flip-hint {
+      margin-top: 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .back-section { margin-bottom: 14px; }
+
+    .back-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+
+    .explanation-en {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .example-ja {
+      font-size: 1rem;
+      color: var(--text-primary);
+      line-height: 1.7;
+      margin-bottom: 6px;
+    }
+
+    .example-en {
+      font-size: 0.82rem;
+      color: var(--accent-light);
+      line-height: 1.5;
+    }
+
+    .voice-panel { padding: 20px 16px; min-height: 280px; }
+
+    .voice-title {
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .voice-ref-box {
+      background: var(--bg-surface);
+      border-radius: var(--radius-btn);
+      padding: 12px 16px;
+      margin-bottom: 12px;
+    }
+
+    .voice-ref-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .voice-ref-grammar {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .voice-ref-grammar strong {
+      display: block;
+      font-size: 1rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .voice-example-box {
+      background: var(--bg-surface);
+      border-radius: var(--radius-btn);
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+
+    .voice-example-ja {
+      font-size: 1.125rem;
+      font-weight: 600;
+      line-height: 1.7;
+    }
+
+    .voice-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .voice-step {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: var(--bg-surface);
+      border: 2px solid var(--border);
+      color: var(--text-muted);
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+    }
+
+    .voice-step.active .step-num {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .voice-step.done .step-num {
+      background: rgba(29, 158, 117, 0.2);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .step-body { flex: 1; min-width: 0; }
+
+    .step-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .voice-step:not(.active):not(.done) .step-title { color: var(--text-muted); }
+
+    .sample-audio-btn,
+    .voice-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+
+    .sample-audio-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+    }
+
+    .sample-audio-btn:hover { border-color: var(--accent); transform: scale(1.02); }
+
+    .voice-btn { border: none; }
+    .voice-btn:hover:not(:disabled) { transform: scale(1.02); }
+    .voice-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .voice-btn.record { background: var(--accent); color: #fff; }
+    .voice-btn.stop { background: var(--red); color: #fff; }
+
+    .waveform {
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 4px;
+      height: 32px;
+      margin: 10px 0;
+    }
+
+    .waveform.active { display: flex; }
+
+    .wave-bar {
+      width: 4px;
+      background: var(--accent-light);
+      border-radius: 2px;
+      animation: wave 0.8s ease-in-out infinite;
+    }
+
+    .wave-bar:nth-child(1) { height: 12px; }
+    .wave-bar:nth-child(2) { height: 24px; animation-delay: 0.15s; }
+    .wave-bar:nth-child(3) { height: 16px; animation-delay: 0.3s; }
+
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.5); }
+      50% { transform: scaleY(1.2); }
+    }
+
+    .voice-evaluating {
+      display: none;
+      text-align: center;
+      padding: 12px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .voice-evaluating.active { display: block; }
+
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .score-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 14px;
+    }
+
+    .score-card.has-result {
+      animation: fadeIn 0.3s ease;
+      border-color: var(--accent);
+    }
+
+    .score-card:not(.has-result) .score-hint { display: none; }
+
+    .score-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .score-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .score-feedback {
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .score-hint {
+      font-size: 0.82rem;
+      color: var(--amber);
+    }
+
+    .voice-limit {
+      display: none;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    .voice-limit.active { display: block; }
+
+    .nav-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 20px 20px;
+    }
+
+    .nav-btn {
+      padding: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      border-radius: var(--radius-btn);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+
+    .nav-btn:hover { border-color: var(--accent); }
+    .nav-btn:active { transform: scale(0.98); }
+
+    .nav-btn.know {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .loading-overlay,
+    .error-card {
+      margin: 20px;
+      padding: 32px 20px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .loading-overlay .spinner {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 12px;
+    }
+
+    .error-card p {
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+    }
+
+    .btn-retry-init {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .practice-header { padding: 16px 20px 12px; }
+
+    .practice-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .practice-title { font-size: 1rem; font-weight: 700; }
+
+    .practice-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .practice-body { padding: 0 20px 20px; }
+
+    .type-badge {
+      display: inline-block;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .question-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 20px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+      animation: fadeIn 0.15s ease;
+    }
+
+    .question-text {
+      font-size: 1rem;
+      line-height: 1.8;
+    }
+
+    .question-text .blank {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .choices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .choice-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.95rem;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.08s;
+    }
+
+    .choice-btn:active:not(:disabled) { transform: scale(0.98); }
+    .choice-btn.selected { border-color: var(--accent); }
+    .choice-btn.correct {
+      background: rgba(29, 158, 117, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .choice-btn.wrong {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: var(--red);
+      color: var(--red);
+    }
+    .choice-btn:disabled { cursor: default; pointer-events: none; }
+
+    .choice-num {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+
+    .feedback-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      animation: slideUp 0.2s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .feedback-panel.correct {
+      background: rgba(29, 158, 117, 0.08);
+      border-color: rgba(29, 158, 117, 0.3);
+    }
+
+    .feedback-panel.incorrect {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .feedback-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feedback-title.correct { color: var(--accent); }
+    .feedback-title.incorrect { color: var(--red); }
+
+    .feedback-answer {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .btn-next {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-next:hover { background: var(--accent-light); }
+
+    .practice-result {
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+      padding: 20px 0;
+    }
+
+    .result-emoji { font-size: 2.5rem; margin-bottom: 8px; }
+    .result-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+
+    .result-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .result-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
+
+    .result-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .result-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    .result-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--amber);
+      margin-bottom: 24px;
+    }
+
+    .btn-result-primary,
+    .btn-result-secondary {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .btn-result-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+    }
+
+    .btn-result-secondary {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--nav-height);
+      display: flex;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      z-index: 30;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      text-decoration: none;
+    }
+
+    .nav-item .nav-icon { font-size: 1.25rem; }
+    .nav-item.active { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <a class="header-btn" href="index.html" data-i18n="back">← 戻る</a>
+      <span class="header-title" data-i18n="title">文法</span>
+      <button class="header-icon" type="button" data-open-settings aria-label="設定">⚙️</button>
+    </header>
+
+    <nav class="tab-bar">
+      <button class="tab active" data-tab="flashcard" type="button" data-i18n="tabFlashcard">単語帳</button>
+      <button class="tab" data-tab="practice" type="button" data-i18n="tabPractice">実戦問題</button>
+    </nav>
+
+    <section class="progress-section" id="progressSection">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+      <div class="progress-bottom">
+        <span class="progress-label" id="progressLabel" data-i18n="progressLabel">文法項目</span>
+        <span class="progress-count" id="progressCount">0 / 0</span>
+      </div>
+    </section>
+
+    <div id="flashcardTabContent">
+      <div id="flashcardLoading" class="loading-overlay" hidden>
+        <div class="spinner"></div>
+        <p data-i18n="loading">読み込み中...</p>
+      </div>
+      <div id="flashcardError" class="error-card" hidden>
+        <p data-i18n="loadError">データを読み込めませんでした。再試行してください。</p>
+        <button class="btn-retry-init" type="button" onclick="init()" data-i18n="retry">再試行</button>
+      </div>
+      <div id="flashcardMain">
+        <div class="mode-switcher" id="modeSwitcher">
+          <button class="mode-btn flashcard-mode active" id="modeFlashcard" data-mode="flashcard" type="button">
+            <span>📚</span>
+            <span class="mode-label" data-i18n="modeFlashcard">単語帳</span>
+          </button>
+          <button class="mode-btn voice-mode" id="modeVoice" data-mode="voice" type="button">
+            <span>🎤</span>
+            <span class="mode-label" data-i18n="modeVoice">発声</span>
+            <span class="mode-badge show" id="voiceBadge"></span>
+          </button>
+        </div>
+
+        <section class="content-block" id="flashcardSection">
+          <div class="block-card card-area">
+            <div class="card-wrapper" id="cardWrapper">
+              <div class="swipe-overlay" id="swipeOverlay"></div>
+              <div class="card-inner" id="cardInner">
+                <div class="card-face card-front" id="cardFront">
+                  <div class="card-front-content">
+                    <span class="day-badge" id="dayBadge"></span>
+                    <div class="grammar-main" id="grammarMain"></div>
+                    <div class="flip-hint">タップで裏へ →</div>
+                  </div>
+                </div>
+                <div class="card-face card-back" id="cardBack">
+                  <div class="back-section">
+                    <div class="back-label">意味・説明</div>
+                    <div class="explanation-en" id="explanationEn"></div>
+                  </div>
+                  <div class="back-section">
+                    <div class="back-label">例文</div>
+                    <div class="example-ja" id="exampleJa"></div>
+                    <div class="example-en" id="exampleEn"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-block hidden" id="voiceSection">
+          <div class="block-card voice-panel">
+            <div class="voice-title">🎤 例文を読んでみましょう</div>
+            <div class="voice-ref-box">
+              <div class="voice-ref-label">文法項目</div>
+              <div class="voice-ref-grammar" id="voiceGrammarRef"></div>
+            </div>
+            <div class="voice-example-box">
+              <div class="voice-ref-label">例文</div>
+              <div class="voice-example-ja" id="voiceExampleJa"></div>
+            </div>
+            <div class="voice-steps">
+              <div class="voice-step active" id="step1">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                  <div class="step-title">手本を聴く</div>
+                  <button class="sample-audio-btn" id="sampleAudioBtn" type="button">🔊 手本を聴く</button>
+                </div>
+              </div>
+              <div class="voice-step" id="step2">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                  <div class="step-title">録音する</div>
+                  <button class="voice-btn record" id="recordBtn" type="button">● 録音開始</button>
+                  <div class="waveform" id="waveform">
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                    <div class="wave-bar"></div>
+                  </div>
+                  <div class="voice-evaluating" id="voiceEvaluating">
+                    <span class="spinner"></span>評価中...
+                  </div>
+                  <div class="voice-limit" id="voiceLimit">録音上限に達しました</div>
+                </div>
+              </div>
+              <div class="voice-step" id="step3">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                  <div class="step-title">スコア</div>
+                  <div class="score-card" id="scoreCard">
+                    <div class="score-label">発音スコア</div>
+                    <div class="score-value" id="scoreValue">—</div>
+                    <div class="score-feedback" id="scoreFeedback">録音後にスコアが表示されます</div>
+                    <div class="score-hint" id="scoreHint"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="nav-buttons" id="navButtons">
+          <button class="nav-btn" id="btnRetry" type="button">✗ もう一度</button>
+          <button class="nav-btn know" id="btnKnow" type="button">✓ 知ってる</button>
+        </div>
+      </div>
+    </div>
+
+    <section id="practiceSection">
+      <div class="practice-header">
+        <div class="practice-title-row">
+          <span class="practice-title" id="practiceTitleLabel" data-i18n="practiceTitle">📝 実戦問題</span>
+          <span class="practice-counter" id="practiceCounter">1 / 10</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="practiceProgressBar"></div>
+        </div>
+      </div>
+      <div class="practice-body">
+        <div id="practiceQuestionWrap"></div>
+        <div class="practice-result" id="practiceResult" style="display:none;"></div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html" data-nav="home">
+      <span class="nav-icon">🏠</span><span data-i18n="navHome">ホーム</span>
+    </a>
+    <span class="nav-item active" data-nav="study">
+      <span class="nav-icon">📝</span><span data-i18n="navStudy">学習</span>
+    </span>
+    <button class="nav-item" data-nav="history" type="button" onclick="alert(AppLang.st('historySoon'))">
+      <span class="nav-icon">📊</span><span data-i18n="navHistory">履歴</span>
+    </button>
+    <button class="nav-item" data-nav="settings" type="button" data-open-settings>
+      <span class="nav-icon">⚙️</span><span data-i18n="navSettings">設定</span>
+    </button>
+  </nav>
+
+  <script src="js/app-settings.js"></script>
+  <script src="js/app-i18n-common.js"></script>
+  <script src="js/app-progress.js"></script>
+  <script>
+    const GAS_BASE = 'https://script.google.com/macros/s/AKfycbwjaswl5-q581vijF4IyQIGxAj85MTWH0b7GxIflXxSGULcKwY2K6-5ICZWYMKCMgpw2Q/exec';
+    const GAS_API_KEY = 'bb_prod_2026_xK9mN3vQ7rL8wP5j';
+    const API_LANG = () => AppLang.getApiLang();
+    const VOICE_MAX_ATTEMPTS = 1;
+    const VOICE_MAX_SEC = 15;
+    const PRACTICE_LIMIT = 10;
+
+    const i18n = AppI18n.mergeI18n({
+      ja: {
+        title: '文法',
+        progressLabel: '文法項目',
+        modeFlashcard: '単語帳',
+        modeVoice: '発声',
+        practiceTitle: '📝 実戦問題',
+        resultDone: '完了！',
+        resultScoreLabel: '正解',
+        resultBack: '単語帳へ戻る',
+        correctAnswer: '正解は',
+      },
+      en: {
+        title: 'Grammar',
+        progressLabel: 'Grammar items',
+        modeFlashcard: 'Flashcards',
+        modeVoice: 'Voice',
+        practiceTitle: '📝 Practice',
+        resultDone: 'Done!',
+        resultScoreLabel: 'Correct',
+        resultBack: 'Back to flashcards',
+        correctAnswer: 'The answer was',
+      },
+    });
+    const t = (key, vars) => AppLang.t(i18n, key, vars);
+
+    function applyI18n() {
+      AppI18n.applyI18n(i18n);
+    }
+
+    function refreshUi() {
+      applyI18n();
+      if (currentMainTab === 'flashcard' && filteredGrammar.length) {
+        renderGrammarCard(grammarIndex);
+      } else if (currentMainTab === 'practice' && practiceQuestions.length) {
+        if (document.getElementById('practiceResult').style.display === 'block') {
+          showResult();
+        } else {
+          showQuestion(practiceIndex);
+        }
+      }
+    }
+
+    const CHOICE_MARKS = ['①', '②', '③', '④', '⑤', '⑥'];
+
+    const MOCK_GRAMMAR_LIST = [
+      {
+        day: '1日目',
+        grammar: '〜（ら）れる（受身形）',
+        explanation: {
+          ja: '主語を表さないで事実を述べるとき、よく受身形を使う。',
+          en: 'When you mention a fact without a subject, the passive form is often used.',
+        },
+        example: {
+          ja: '入学式は、このホールで行われます。',
+          en: 'The entrance ceremony will take place in this hall.',
+        },
+      },
+      {
+        day: '2日目',
+        grammar: '〜ちゃう / 〜じゃう',
+        explanation: {
+          ja: '「Vてしまう」の会話的表現。',
+          en: 'Conversational expression of "Vてしまう".',
+        },
+        example: {
+          ja: '試験が終わった！今日は飲んじゃおう！',
+          en: 'Oh, the exam is over! I am going to have a drink!',
+        },
+      },
+    ];
+
+    const MOCK_PRACTICE = [
+      {
+        week: '第1週',
+        question_type: '問題1 つぎの文の（　）に入れるのに最もよいものを、1・2・3・4から一つえらびなさい。',
+        no: 1,
+        question: '30分だけここに車を（　　）もらえませんか。',
+        choices: ['止められて', '止めさせて', '止まらせて', '止まられて'],
+        answer: 2,
+      },
+      {
+        week: '第1週',
+        question_type: '問題1 つぎの文の（　）に入れるのに最もよいものを、1・2・3・4から一つえらびなさい。',
+        no: 2,
+        question: 'どうして悪いところを（　　）としないんですか。',
+        choices: ['直しよう', '直ろう', '直そう', '直られよう'],
+        answer: 3,
+      },
+    ];
+
+    let apiGrammarList = [];
+    let apiPracticeQuestions = [];
+    let grammarIndex = 0;
+    let filteredGrammar = [];
+    let isFlipped = false;
+    let currentMode = 'flashcard';
+    let progress = { current: 0, total: 0 };
+    let voiceState = 'idle';
+    let voiceAttempts = 0;
+    let voiceDoneForItem = false;
+    let sampleListened = false;
+    let isAnimating = false;
+    let currentMainTab = 'flashcard';
+
+    let practiceQuestions = [];
+    let practiceIndex = 0;
+    let practiceAnswered = false;
+    let practiceScore = 0;
+    let practiceTotal = PRACTICE_LIMIT;
+    let selectedChoice = null;
+
+    let speechRecognition = null;
+    let recordingTimer = null;
+    let recognizedText = '';
+    let voiceProcessed = false;
+
+    const cardWrapper = document.getElementById('cardWrapper');
+    const cardInner = document.getElementById('cardInner');
+    const swipeOverlay = document.getElementById('swipeOverlay');
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    async function fetchGrammarList() {
+      const url = `${GAS_BASE}?api_key=${encodeURIComponent(GAS_API_KEY)}&category=grammar&type=list&lang=${encodeURIComponent(API_LANG())}&limit=200`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.length) return json.data;
+        throw new Error('empty');
+      } catch (err) {
+        console.warn('[grammar] list API fallback', err);
+        return MOCK_GRAMMAR_LIST;
+      }
+    }
+
+    async function fetchPracticeQuestions() {
+      const url = `${GAS_BASE}?api_key=${encodeURIComponent(GAS_API_KEY)}&category=grammar&type=exam&lang=${encodeURIComponent(API_LANG())}&limit=200`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.length) {
+          return json.data.filter((q) => !String(q.question_type || '').includes('問題2'));
+        }
+        throw new Error('empty');
+      } catch (err) {
+        console.warn('[grammar] exam API fallback', err);
+        return MOCK_PRACTICE;
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('flashcardLoading').hidden = false;
+      document.getElementById('flashcardError').hidden = true;
+      document.getElementById('flashcardMain').style.display = 'none';
+    }
+
+    function hideLoading() {
+      document.getElementById('flashcardLoading').hidden = true;
+      document.getElementById('flashcardMain').style.display = 'block';
+    }
+
+    function showError() {
+      document.getElementById('flashcardLoading').hidden = true;
+      document.getElementById('flashcardMain').style.display = 'none';
+      document.getElementById('flashcardError').hidden = false;
+    }
+
+    async function init() {
+      showLoading();
+      try {
+        [apiGrammarList, apiPracticeQuestions] = await Promise.all([
+          fetchGrammarList(),
+          fetchPracticeQuestions(),
+        ]);
+        if (!apiGrammarList.length) throw new Error('no data');
+        filteredGrammar = [...apiGrammarList];
+        grammarIndex = 0;
+        progress = { current: grammarIndex + 1, total: apiGrammarList.length };
+        hideLoading();
+        updateProgressBar();
+        renderGrammarCard(grammarIndex);
+      } catch (err) {
+        console.error('[grammar] init error', err);
+        apiGrammarList = MOCK_GRAMMAR_LIST;
+        apiPracticeQuestions = MOCK_PRACTICE;
+        filteredGrammar = [...apiGrammarList];
+        grammarIndex = 0;
+        progress = { current: 1, total: apiGrammarList.length };
+        if (!apiGrammarList.length) {
+          showError();
+          return;
+        }
+        hideLoading();
+        updateProgressBar();
+        renderGrammarCard(0);
+      }
+    }
+
+    function updateProgressBar() {
+      const current = filteredGrammar.length ? grammarIndex + 1 : 0;
+      const total = filteredGrammar.length || progress.total;
+      document.getElementById('progressCount').textContent = `${current} / ${total}`;
+      const pct = total ? (current / total) * 100 : 0;
+      document.getElementById('progressBar').style.width = pct + '%';
+    }
+
+    function getGrammarItem(index) {
+      if (!filteredGrammar.length) return null;
+      return filteredGrammar[index % filteredGrammar.length];
+    }
+
+    function renderGrammarCard(index) {
+      const item = getGrammarItem(index);
+      if (!item) return;
+      grammarIndex = index;
+
+      document.getElementById('dayBadge').textContent = item.day || '';
+      document.getElementById('grammarMain').textContent = item.grammar || '';
+      document.getElementById('explanationEn').textContent = item.explanation?.en || '';
+      document.getElementById('exampleJa').textContent = item.example?.ja || '';
+      document.getElementById('exampleEn').textContent = item.example?.en || '';
+
+      document.getElementById('voiceGrammarRef').innerHTML =
+        `<strong>${item.grammar || ''}</strong>`;
+      document.getElementById('voiceExampleJa').textContent = item.example?.ja || '';
+
+      voiceAttempts = 0;
+      voiceDoneForItem = false;
+      updateVoiceBadge();
+      resetCardFlip();
+      resetVoice();
+
+      cardInner.classList.remove('slide-out-left', 'slide-out-right');
+      cardInner.style.animation = 'none';
+      void cardInner.offsetWidth;
+      cardInner.style.animation = 'fadeIn 0.15s ease';
+
+      updateProgressBar();
+    }
+
+    function resetCardFlip() {
+      isFlipped = false;
+      cardInner.classList.remove('flipped');
+    }
+
+    function flipCard() {
+      if (voiceState === 'recording') return;
+      isFlipped = !isFlipped;
+      cardInner.classList.toggle('flipped', isFlipped);
+    }
+
+    function switchMode(mode) {
+      if (currentMainTab !== 'flashcard') return;
+      currentMode = mode;
+      document.getElementById('modeFlashcard').classList.toggle('active', mode === 'flashcard');
+      document.getElementById('modeVoice').classList.toggle('active', mode === 'voice');
+      document.getElementById('flashcardSection').classList.toggle('hidden', mode !== 'flashcard');
+      document.getElementById('voiceSection').classList.toggle('hidden', mode !== 'voice');
+    }
+
+    function updateVoiceBadge() {
+      document.getElementById('voiceBadge').classList.toggle('show', !voiceDoneForItem);
+    }
+
+    function updateVoiceSteps() {
+      const steps = [
+        document.getElementById('step1'),
+        document.getElementById('step2'),
+        document.getElementById('step3'),
+      ];
+      steps.forEach((s) => s.classList.remove('active', 'done'));
+
+      if (voiceState === 'result') {
+        steps[0].classList.add('done');
+        steps[1].classList.add('done');
+        steps[2].classList.add('active', 'done');
+      } else if (voiceState === 'recording' || voiceState === 'evaluating') {
+        steps[0].classList.add('done');
+        steps[1].classList.add('active');
+      } else if (sampleListened) {
+        steps[0].classList.add('done');
+        steps[1].classList.add('active');
+      } else {
+        steps[0].classList.add('active');
+      }
+    }
+
+    function resetVoice() {
+      voiceState = 'idle';
+      sampleListened = false;
+      recognizedText = '';
+      voiceProcessed = false;
+      document.getElementById('recordBtn').style.display = 'block';
+      document.getElementById('recordBtn').textContent = '● 録音開始';
+      document.getElementById('recordBtn').className = 'voice-btn record';
+      document.getElementById('recordBtn').disabled = voiceAttempts >= VOICE_MAX_ATTEMPTS;
+      document.getElementById('waveform').classList.remove('active');
+      document.getElementById('voiceEvaluating').classList.remove('active');
+      document.getElementById('scoreCard').classList.remove('has-result');
+      document.getElementById('scoreValue').textContent = '—';
+      document.getElementById('scoreFeedback').textContent = '録音後にスコアが表示されます';
+      document.getElementById('scoreHint').textContent = '';
+      document.getElementById('voiceLimit').classList.toggle('active', voiceAttempts >= VOICE_MAX_ATTEMPTS);
+      updateVoiceSteps();
+    }
+
+    function speakExample(text) {
+      if (!text) return;
+      speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ja-JP';
+      utterance.rate = 0.85;
+      utterance.pitch = 1.0;
+      speechSynthesis.speak(utterance);
+    }
+
+    function startRecording() {
+      if (voiceAttempts >= VOICE_MAX_ATTEMPTS) return;
+
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        alert('お使いのブラウザでは音声認識に対応していません。');
+        return;
+      }
+
+      recognizedText = '';
+      voiceProcessed = false;
+      speechRecognition = new SpeechRec();
+      speechRecognition.lang = 'ja-JP';
+      speechRecognition.interimResults = false;
+      speechRecognition.maxAlternatives = 1;
+      speechRecognition.continuous = false;
+
+      speechRecognition.onresult = (e) => {
+        recognizedText = e.results[0][0].transcript;
+      };
+
+      speechRecognition.onerror = (e) => {
+        console.error('[voice] recognition error', e);
+        clearTimeout(recordingTimer);
+        if (!voiceProcessed) {
+          voiceProcessed = true;
+          processVoiceResult('');
+        }
+      };
+
+      speechRecognition.onend = () => {
+        clearTimeout(recordingTimer);
+        if (!voiceProcessed) {
+          voiceProcessed = true;
+          processVoiceResult(recognizedText);
+        }
+      };
+
+      try {
+        speechRecognition.start();
+        voiceState = 'recording';
+        document.getElementById('recordBtn').textContent = '■ 停止';
+        document.getElementById('recordBtn').className = 'voice-btn stop';
+        document.getElementById('waveform').classList.add('active');
+        updateVoiceSteps();
+
+        recordingTimer = setTimeout(() => {
+          if (voiceState === 'recording') stopRecording();
+        }, VOICE_MAX_SEC * 1000);
+      } catch (err) {
+        alert('マイクへのアクセスが許可されていません。');
+      }
+    }
+
+    function stopRecording() {
+      if (voiceState !== 'recording' || !speechRecognition) return;
+      voiceState = 'evaluating';
+      document.getElementById('recordBtn').style.display = 'none';
+      document.getElementById('waveform').classList.remove('active');
+      document.getElementById('voiceEvaluating').classList.add('active');
+      updateVoiceSteps();
+      try {
+        speechRecognition.stop();
+      } catch (err) {
+        processVoiceResult(recognizedText);
+      }
+    }
+
+    async function evaluatePronunciation(correctText, sttResult) {
+      const systemPrompt = `You are a Japanese pronunciation evaluator for JLPT N3 learners.
+The user's native language is English.
+Evaluate the pronunciation based on the comparison between the correct text and the STT result.
+Respond ONLY in valid JSON. No markdown, no explanation outside JSON.`;
+
+      const userPrompt = `
+Correct text: "${correctText}"
+STT result: "${sttResult}"
+
+Evaluate and return JSON in exactly this format:
+{
+  "score": <integer 0-100>,
+  "feedback": "<one short sentence in English, max 20 words>",
+  "hint": "<one short improvement tip in English, max 20 words, or empty string if perfect>"
+}
+
+Scoring guide:
+- 90-100: Nearly identical or fully correct
+- 70-89: Minor differences (e.g. one mora off)
+- 50-69: Partially correct (recognizable but significant errors)
+- 0-49: Largely incorrect or unrecognized
+- If STT result is empty string, score = 0, feedback = "Could not recognize speech. Please try again.", hint = ""
+`;
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': ANTHROPIC_API_KEY,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5',
+          max_tokens: 200,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      });
+
+      if (!res.ok) throw new Error(`Haiku error: ${res.status}`);
+      const json = await res.json();
+      const text = json.content?.[0]?.text || '{}';
+
+      try {
+        return JSON.parse(text);
+      } catch {
+        return { score: 0, feedback: 'Evaluation failed. Please try again.', hint: '' };
+      }
+    }
+
+    async function processVoiceResult(sttResult) {
+      if (voiceState === 'result') return;
+
+      const item = getGrammarItem(grammarIndex);
+      const correctText = item?.example?.ja || '';
+
+      let result;
+      if (!sttResult) {
+        result = { score: 0, feedback: 'Could not recognize speech. Please try again.', hint: '' };
+      } else {
+        try {
+          result = await evaluatePronunciation(correctText, sttResult);
+        } catch (err) {
+          console.error('[voice] evaluation error', err);
+          result = { score: 0, feedback: 'Network error. Please try again.', hint: '' };
+        }
+      }
+
+      voiceAttempts += 1;
+      voiceState = 'result';
+
+      document.getElementById('voiceEvaluating').classList.remove('active');
+      document.getElementById('scoreValue').textContent = result.score + '点';
+      document.getElementById('scoreFeedback').textContent =
+        result.score >= 70 ? '✓ ' + result.feedback : '✗ ' + result.feedback;
+      document.getElementById('scoreHint').textContent =
+        result.hint ? '△ ' + result.hint : '';
+      document.getElementById('scoreCard').classList.add('has-result');
+      document.getElementById('recordBtn').style.display = 'none';
+      document.getElementById('recordBtn').disabled = true;
+      document.getElementById('voiceLimit').classList.add('active');
+
+      voiceDoneForItem = true;
+      updateVoiceBadge();
+      updateVoiceSteps();
+    }
+
+    function goNext(know) {
+      if (isAnimating || !filteredGrammar.length) return;
+      isAnimating = true;
+
+      const outClass = know ? 'slide-out-right' : 'slide-out-left';
+      cardInner.classList.add(outClass);
+
+      setTimeout(() => {
+        if (know) {
+          grammarIndex = (grammarIndex + 1) % filteredGrammar.length;
+        } else {
+          const [current] = filteredGrammar.splice(grammarIndex, 1);
+          filteredGrammar.push(current);
+        }
+        renderGrammarCard(grammarIndex);
+        isAnimating = false;
+      }, 300);
+    }
+
+    function formatQuestionHtml(text) {
+      if (!text) return '';
+      let html = text
+        .replace(/\\\[(\d+)\\\]/g, '<span class="blank">（　　）</span>')
+        .replace(/\[(\d+)\]/g, '<span class="blank">（　　）</span>')
+        .replace(/（\s*）/g, '<span class="blank">（　　）</span>');
+      return html;
+    }
+
+    function getQuestionTypeLabel(questionType) {
+      const match = String(questionType || '').match(/問題\d/);
+      return match ? match[0] : '問題';
+    }
+
+    function updatePracticeHeader() {
+      const n = practiceIndex + 1;
+      document.getElementById('practiceCounter').textContent = `${n} / ${practiceTotal}`;
+      const pct = practiceTotal ? ((practiceIndex + 1) / practiceTotal) * 100 : 0;
+      document.getElementById('practiceProgressBar').style.width = pct + '%';
+    }
+
+    function startPractice() {
+      practiceQuestions = shuffleArray(apiPracticeQuestions).slice(0, PRACTICE_LIMIT);
+      practiceTotal = practiceQuestions.length || PRACTICE_LIMIT;
+      practiceIndex = 0;
+      practiceAnswered = false;
+      practiceScore = 0;
+      selectedChoice = null;
+      document.getElementById('practiceQuestionWrap').style.display = 'block';
+      document.getElementById('practiceResult').style.display = 'none';
+
+      if (!practiceQuestions.length) {
+        document.getElementById('practiceQuestionWrap').innerHTML =
+          '<div class="error-card"><p>問題がありません。</p></div>';
+        return;
+      }
+      showQuestion(0);
+    }
+
+    function showQuestion(index) {
+      practiceIndex = index;
+      practiceAnswered = false;
+      selectedChoice = null;
+      const q = practiceQuestions[index];
+      const typeLabel = getQuestionTypeLabel(q.question_type);
+
+      const choicesHtml = q.choices.map((c, i) => `
+        <button class="choice-btn" data-choice="${i}" type="button">
+          <span class="choice-num">${CHOICE_MARKS[i] || (i + 1)}</span>
+          <span>${c}</span>
+        </button>
+      `).join('');
+
+      document.getElementById('practiceQuestionWrap').innerHTML = `
+        <span class="type-badge">${typeLabel}</span>
+        <div class="question-card">
+          <div class="question-text">${formatQuestionHtml(q.question)}</div>
+        </div>
+        <div class="choices-list" id="choicesList">${choicesHtml}</div>
+        <div id="feedbackArea"></div>
+      `;
+
+      document.querySelectorAll('.choice-btn').forEach((btn) => {
+        btn.addEventListener('click', () => selectChoice(Number(btn.dataset.choice)));
+      });
+
+      updatePracticeHeader();
+    }
+
+    function selectChoice(choiceIndex) {
+      if (practiceAnswered) return;
+      practiceAnswered = true;
+      selectedChoice = choiceIndex;
+      const q = practiceQuestions[practiceIndex];
+      const correctIndex = q.answer - 1;
+      const isCorrect = choiceIndex === correctIndex;
+      if (isCorrect) practiceScore += 1;
+
+      document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+        btn.disabled = true;
+        btn.classList.remove('selected');
+        if (i === choiceIndex && !isCorrect) btn.classList.add('wrong');
+        if (i === correctIndex) btn.classList.add('correct');
+        if (i === choiceIndex && isCorrect) btn.classList.add('correct');
+      });
+
+      const feedbackArea = document.getElementById('feedbackArea');
+      feedbackArea.innerHTML = `
+        <div class="feedback-panel ${isCorrect ? 'correct' : 'incorrect'}">
+          <div class="feedback-title ${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? t('correct') : t('incorrect')}</div>
+          <div class="feedback-answer">${t('correctAnswer')}：${CHOICE_MARKS[correctIndex] || (correctIndex + 1)} ${q.choices[correctIndex]}</div>
+          <button class="btn-next" id="btnNextQuestion" type="button">${t('nextQuestion')}</button>
+        </div>
+      `;
+      document.getElementById('btnNextQuestion').addEventListener('click', nextQuestion);
+    }
+
+    function nextQuestion() {
+      if (practiceIndex + 1 >= practiceTotal) {
+        showResult();
+      } else {
+        showQuestion(practiceIndex + 1);
+      }
+    }
+
+    function showResult() {
+      document.getElementById('practiceQuestionWrap').style.display = 'none';
+      const resultEl = document.getElementById('practiceResult');
+      resultEl.style.display = 'block';
+      const pct = practiceTotal ? Math.round((practiceScore / practiceTotal) * 100) : 0;
+
+      if (practiceTotal > 0 && typeof AppProgress !== 'undefined') {
+        AppProgress.recordSession({
+          module: 'grammar',
+          mode: 'practice',
+          label: '文法練習',
+          score: practiceScore,
+          total: practiceTotal,
+        });
+      }
+
+      resultEl.innerHTML = `
+        <div class="result-emoji">🎉</div>
+        <div class="result-title">${t('resultDone')}</div>
+        <div class="result-score">${practiceScore} / ${practiceTotal}</div>
+        <div class="result-label">${t('resultScoreLabel')}</div>
+        <div class="result-bar-wrap"><div class="result-bar" id="resultBar"></div></div>
+        <div class="result-pct">${pct}%</div>
+        <button class="btn-result-primary" id="btnRetryPractice" type="button">${t('resultRetry')}</button>
+        <button class="btn-result-secondary" id="btnBackFlashcard" type="button">${t('resultBack')}</button>
+      `;
+
+      requestAnimationFrame(() => {
+        document.getElementById('resultBar').style.width = pct + '%';
+      });
+
+      document.getElementById('btnRetryPractice').addEventListener('click', startPractice);
+      document.getElementById('btnBackFlashcard').addEventListener('click', () => switchMainTab('flashcard'));
+    }
+
+    function switchMainTab(tab) {
+      currentMainTab = tab;
+      document.querySelectorAll('.tab').forEach((t) => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+      });
+
+      const practiceEl = document.getElementById('practiceSection');
+      const progressEl = document.getElementById('progressSection');
+      const flashcardTab = document.getElementById('flashcardTabContent');
+      const modeEl = document.getElementById('modeSwitcher');
+      const navEl = document.getElementById('navButtons');
+
+      if (tab === 'practice') {
+        practiceEl.style.display = 'block';
+        progressEl.style.display = 'none';
+        flashcardTab.style.display = 'none';
+        modeEl.style.display = 'none';
+        navEl.style.display = 'none';
+        startPractice();
+      } else {
+        practiceEl.style.display = 'none';
+        progressEl.style.display = 'block';
+        flashcardTab.style.display = 'block';
+        modeEl.style.display = 'flex';
+        navEl.style.display = 'grid';
+        document.getElementById('progressLabel').textContent = t('progressLabel');
+        updateProgressBar();
+        switchMode(currentMode);
+      }
+
+      window.scrollTo(0, 0);
+    }
+
+    let dragStartX = 0;
+    let dragCurrentX = 0;
+    let isDragging = false;
+
+    function onDragStart(x) {
+      if (isAnimating || currentMode !== 'flashcard') return;
+      isDragging = true;
+      dragStartX = x;
+      dragCurrentX = x;
+      cardWrapper.classList.add('dragging');
+    }
+
+    function onDragMove(x) {
+      if (!isDragging) return;
+      dragCurrentX = x;
+      const delta = dragCurrentX - dragStartX;
+      const rotate = delta * 0.04;
+      cardInner.style.transform = isFlipped
+        ? `rotateY(180deg) translateX(${delta}px) rotate(${rotate}deg)`
+        : `translateX(${delta}px) rotate(${rotate}deg)`;
+
+      swipeOverlay.className = 'swipe-overlay';
+      if (delta > 40) {
+        swipeOverlay.classList.add('know');
+        swipeOverlay.style.opacity = Math.min((delta - 40) / 80, 0.6);
+      } else if (delta < -40) {
+        swipeOverlay.classList.add('retry');
+        swipeOverlay.style.opacity = Math.min((-delta - 40) / 80, 0.6);
+      } else {
+        swipeOverlay.style.opacity = 0;
+      }
+    }
+
+    function onDragEnd() {
+      if (!isDragging) return;
+      isDragging = false;
+      cardWrapper.classList.remove('dragging');
+      swipeOverlay.style.opacity = 0;
+      const delta = dragCurrentX - dragStartX;
+      cardInner.style.transform = isFlipped ? 'rotateY(180deg)' : '';
+      if (delta > 80) goNext(true);
+      else if (delta < -80) goNext(false);
+    }
+
+    cardWrapper.addEventListener('touchstart', (e) => onDragStart(e.touches[0].clientX), { passive: true });
+    cardWrapper.addEventListener('touchmove', (e) => onDragMove(e.touches[0].clientX), { passive: true });
+    cardWrapper.addEventListener('touchend', onDragEnd);
+    cardWrapper.addEventListener('mousedown', (e) => { onDragStart(e.clientX); e.preventDefault(); });
+    window.addEventListener('mousemove', (e) => { if (isDragging) onDragMove(e.clientX); });
+    window.addEventListener('mouseup', onDragEnd);
+
+    document.getElementById('cardFront').addEventListener('click', () => {
+      if (Math.abs(dragCurrentX - dragStartX) > 10) return;
+      if (!isFlipped) flipCard();
+    });
+
+    document.getElementById('cardBack').addEventListener('click', () => {
+      if (Math.abs(dragCurrentX - dragStartX) > 10) return;
+      if (isFlipped) flipCard();
+    });
+
+    document.getElementById('sampleAudioBtn').addEventListener('click', () => {
+      const item = getGrammarItem(grammarIndex);
+      speakExample(item?.example?.ja || '');
+      sampleListened = true;
+      updateVoiceSteps();
+    });
+
+    document.getElementById('recordBtn').addEventListener('click', () => {
+      if (voiceState === 'idle') startRecording();
+      else if (voiceState === 'recording') stopRecording();
+    });
+
+    document.getElementById('btnRetry').addEventListener('click', () => goNext(false));
+    document.getElementById('btnKnow').addEventListener('click', () => goNext(true));
+
+    document.getElementById('modeFlashcard').addEventListener('click', () => switchMode('flashcard'));
+    document.getElementById('modeVoice').addEventListener('click', () => switchMode('voice'));
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.tab !== currentMainTab) switchMainTab(tab.dataset.tab);
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => { applyI18n(); init(); });
+    window.addEventListener('app:langchange', refreshUi);
+  </script>
+</body>
+</html>

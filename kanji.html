@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N3 — 漢字</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #060a0f;
+      --bg-card: #0d1117;
+      --bg-surface: #161b22;
+      --border: #21262d;
+      --text-primary: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #1D9E75;
+      --accent-light: #14b8a6;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --nav-height: 72px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 6px 4px;
+      min-width: 44px;
+    }
+
+    .header-btn:hover { color: var(--text-primary); }
+
+    .header-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .header-icon {
+      font-size: 1.2rem;
+      background: none;
+      border: none;
+      cursor: default;
+      padding: 6px;
+      opacity: 0.5;
+    }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-primary);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    .progress-section { padding: 16px 20px 8px; }
+
+    .progress-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .progress-label { font-size: 0.82rem; color: var(--text-muted); }
+    .progress-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .kanji-card-wrap { padding: 0 20px 16px; }
+
+    .kanji-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      animation: fadeIn 0.15s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .kanji-char {
+      font-size: 64px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.1;
+      margin-bottom: 12px;
+    }
+
+    .kanji-meta {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .vocab-section { padding: 0 20px 16px; }
+
+    .vocab-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 10px;
+    }
+
+    .vocab-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .vocab-item {
+      background: var(--bg-surface);
+      border-radius: var(--radius-btn);
+      padding: 12px 16px;
+    }
+
+    .vocab-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .vocab-word { font-weight: 600; font-size: 1.125rem; }
+    .vocab-reading { font-size: 0.88rem; color: var(--text-muted); }
+    .vocab-meaning { font-size: 0.88rem; color: var(--accent-light); margin-top: 4px; }
+
+    .nav-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 0 20px 20px;
+    }
+
+    .nav-btn {
+      padding: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      border-radius: var(--radius-btn);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .nav-btn:hover:not(:disabled) { border-color: var(--accent); }
+    .nav-btn:disabled { opacity: 0.4; pointer-events: none; cursor: default; }
+
+    /* Practice */
+    .drill-selector { padding: 20px; }
+
+    .drill-selector-title {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .drill-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .drill-type-btn {
+      border: 1px solid var(--border);
+      background: var(--bg-surface);
+      border-radius: var(--radius-btn);
+      padding: 16px;
+      text-align: center;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .drill-type-btn:hover { border-color: var(--accent); }
+
+    .practice-body { padding: 0 0 20px; }
+    .practice-body.hidden { display: none; }
+
+    .question-card {
+      margin: 0 20px 16px;
+      padding: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+      animation: fadeIn 0.15s ease;
+    }
+
+    .type-badge {
+      display: inline-block;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .question-text {
+      font-size: 1rem;
+      line-height: 1.6;
+      margin-bottom: 12px;
+    }
+
+    .question-word {
+      font-size: 1.25rem;
+      font-weight: 700;
+      text-align: center;
+      padding: 16px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-btn);
+    }
+
+    .choices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 0 20px;
+    }
+
+    .choice-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.95rem;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.08s;
+    }
+
+    .choice-btn:active:not(:disabled) { transform: scale(0.98); }
+    .choice-btn.selected { border-color: var(--accent); }
+    .choice-btn.correct {
+      background: rgba(29, 158, 117, 0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .choice-btn.wrong {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: var(--red);
+      color: var(--red);
+    }
+    .choice-btn.reveal-correct {
+      background: rgba(29, 158, 117, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .choice-btn:disabled { cursor: default; pointer-events: none; }
+
+    .choice-num { font-weight: 700; flex-shrink: 0; }
+
+    .feedback-panel {
+      margin: 16px 20px 0;
+      padding: 16px;
+      border-radius: var(--radius-btn);
+      animation: slideUp 0.2s ease;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .feedback-panel.correct {
+      background: rgba(29, 158, 117, 0.08);
+      border: 1px solid rgba(29, 158, 117, 0.3);
+    }
+
+    .feedback-panel.incorrect {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .feedback-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .feedback-title.correct { color: var(--accent); }
+    .feedback-title.incorrect { color: var(--red); }
+
+    .feedback-answer {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .btn-next {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-next:hover { background: var(--accent-light); }
+
+    .result-screen {
+      padding: 40px 24px;
+      text-align: center;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-emoji { font-size: 2.5rem; margin-bottom: 8px; }
+    .result-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+
+    .result-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .result-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
+
+    .result-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .result-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    .result-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--amber);
+      margin-bottom: 24px;
+    }
+
+    .result-actions { display: flex; flex-direction: column; gap: 10px; }
+
+    .btn-result-primary,
+    .btn-result-secondary {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-result-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+    }
+
+    .btn-result-secondary {
+      background: transparent;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .loading-overlay,
+    .error-card {
+      margin: 20px;
+      padding: 32px 20px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-card p { color: var(--text-muted); margin-bottom: 16px; font-size: 0.9rem; }
+
+    .btn-retry {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--nav-height);
+      display: flex;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      z-index: 30;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      text-decoration: none;
+    }
+
+    .nav-item .nav-icon { font-size: 1.25rem; }
+    .nav-item.active { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <a class="header-btn" href="index.html" data-i18n="back">← 戻る</a>
+      <span class="header-title" data-i18n="title">漢字</span>
+      <button class="header-icon" type="button" data-open-settings aria-label="設定">⚙️</button>
+    </header>
+
+    <nav class="tab-bar">
+      <button class="tab active" data-tab="flashcard" type="button" data-i18n="tabFlashcard">単語帳</button>
+      <button class="tab" data-tab="practice" type="button" data-i18n="tabPractice">実戦問題</button>
+    </nav>
+
+    <!-- 単語帳タブ -->
+    <div id="tab-flashcard" class="tab-panel active">
+      <div id="flashcardLoading" class="loading-overlay" hidden>
+        <div class="spinner"></div>
+        <p data-i18n="loading">読み込み中...</p>
+      </div>
+      <div id="flashcardError" class="error-card" hidden>
+        <p data-i18n="loadError">データを読み込めませんでした。再試行してください。</p>
+        <button class="btn-retry" type="button" onclick="init()" data-i18n="retry">再試行</button>
+      </div>
+      <div id="flashcardContent">
+        <section class="progress-section">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="flashProgressBar"></div>
+          </div>
+          <div class="progress-bottom">
+            <span class="progress-label" data-i18n="flashLabel">漢字リスト</span>
+            <span class="progress-count" id="flashProgressCount">1 / 3</span>
+          </div>
+        </section>
+        <div class="kanji-card-wrap">
+          <div class="kanji-card" id="kanjiCard">
+            <div class="kanji-char" id="kanjiChar">—</div>
+            <div class="kanji-meta" id="kanjiMeta"></div>
+          </div>
+        </div>
+        <section class="vocab-section">
+          <div class="vocab-label" data-i18n="vocabLabel">語彙</div>
+          <div class="vocab-list" id="vocabList"></div>
+        </section>
+        <div class="nav-buttons">
+          <button class="nav-btn" id="btnPrev" type="button" data-i18n="prev">← 前へ</button>
+          <button class="nav-btn" id="btnNext" type="button" data-i18n="nextBtn">次へ →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 実戦問題タブ -->
+    <div id="tab-practice" class="tab-panel">
+      <div id="drillSelector" class="drill-selector">
+        <p class="drill-selector-title" data-i18n="drillSelect">問題の種類を選んでください</p>
+        <div class="drill-grid">
+          <button class="drill-type-btn" data-drill="drill_meaning" type="button" data-i18n="drillMeaning">意味</button>
+          <button class="drill-type-btn" data-drill="drill_reading" type="button" data-i18n="drillReading">読み方</button>
+          <button class="drill-type-btn" data-drill="drill_kanji" type="button" data-i18n="drillKanji">漢字</button>
+          <button class="drill-type-btn" data-drill="exam" type="button" data-i18n="tabPractice">実戦問題</button>
+        </div>
+      </div>
+
+      <div id="practiceBody" class="practice-body hidden">
+        <section class="progress-section">
+          <div class="progress-bar-wrap">
+            <div class="progress-bar" id="practiceProgressBar"></div>
+          </div>
+          <div class="progress-bottom">
+            <span class="progress-label" id="practiceProgressLabel">練習問題</span>
+            <span class="progress-count" id="practiceProgressCount">1 / 20</span>
+          </div>
+        </section>
+
+        <div id="questionArea">
+          <div class="question-card" id="questionCard">
+            <span class="type-badge" id="questionTypeBadge"></span>
+            <p class="question-text" id="questionText"></p>
+            <div class="question-word" id="questionWord" hidden></div>
+          </div>
+          <div class="choices-list" id="choicesList"></div>
+          <div id="feedbackArea" hidden></div>
+        </div>
+
+        <div id="resultArea" class="result-screen" hidden></div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span><span data-i18n="navHome">ホーム</span></a>
+    <span class="nav-item active"><span class="nav-icon">📝</span><span data-i18n="navStudy">学習</span></span>
+    <button class="nav-item" type="button" onclick="alert(AppLang.st('historySoon'))"><span class="nav-icon">📊</span><span data-i18n="navHistory">履歴</span></button>
+    <button class="nav-item" type="button" data-open-settings><span class="nav-icon">⚙️</span><span data-i18n="navSettings">設定</span></button>
+  </nav>
+
+  <script src="js/app-settings.js"></script>
+  <script src="js/app-i18n-common.js"></script>
+  <script src="js/app-progress.js"></script>
+  <script>
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbwjaswl5-q581vijF4IyQIGxAj85MTWH0b7GxIflXxSGULcKwY2K6-5ICZWYMKCMgpw2Q/exec';
+    const API_KEY = 'bb_prod_2026_xK9mN3vQ7rL8wP5j';
+    const API_LANG = () => AppLang.getApiLang();
+    const SESSION_LIMIT = 20;
+
+    const i18n = AppI18n.mergeI18n({
+      ja: {
+        title: '漢字',
+        flashLabel: '漢字リスト',
+        drillSelect: '問題の種類を選んでください',
+        drillMeaning: '意味',
+        drillReading: '読み方',
+        drillKanji: '漢字',
+        resultDone: '完了！',
+        resultScoreLabel: '正解',
+        resultBackSelector: '問題を選びなおす',
+        strokes: '画',
+        onReading: '音',
+        kunReading: '訓',
+      },
+      en: {
+        title: 'Kanji',
+        flashLabel: 'Kanji list',
+        drillSelect: 'Choose a drill type',
+        drillMeaning: 'Meaning',
+        drillReading: 'Reading',
+        drillKanji: 'Kanji',
+        resultDone: 'Done!',
+        resultScoreLabel: 'Correct',
+        resultBackSelector: 'Choose another drill',
+        strokes: ' strokes',
+        onReading: 'On',
+        kunReading: 'Kun',
+      },
+    });
+    const t = (key, vars) => AppLang.t(i18n, key, vars);
+
+    const DRILL_LABELS = {
+      drill_meaning: { ja: '意味練習問題', en: 'Meaning drill' },
+      drill_reading: { ja: '読み方練習問題', en: 'Reading drill' },
+      drill_kanji: { ja: '漢字練習問題', en: 'Kanji drill' },
+      exam: { ja: '実戦問題', en: 'Practice exam' },
+    };
+
+    function drillLabel(type) {
+      const item = DRILL_LABELS[type];
+      if (!item) return '';
+      return AppLang.isEn() ? item.en : item.ja;
+    }
+
+    function applyI18n() {
+      AppI18n.applyI18n(i18n);
+    }
+
+    function refreshUi() {
+      applyI18n();
+      if (kanjiData.length) renderKanjiCard(currentKanjiIndex);
+      if (drillType && questions.length) {
+        if (!document.getElementById('resultArea').hidden) showResult();
+        else renderQuestion(currentQuestionIndex);
+      }
+    }
+
+    const CHOICE_MARKS = ['①', '②', '③', '④', '⑤', '⑥'];
+
+    const MOCK_KANJI = [
+      {
+        no: 1, kanji: '駐', strokes: '15画', on_reading: 'チュウ', kun_reading: null,
+        vocab: [{ word: '駐車', reading: 'ちゅうしゃ', meaning: { en: 'parking' } }],
+      },
+      {
+        no: 2, kanji: '無', strokes: '12画', on_reading: 'ム', kun_reading: 'な・い',
+        vocab: [
+          { word: '無料', reading: 'むりょう', meaning: { en: 'no charge' } },
+          { word: '無い', reading: 'ない', meaning: { en: 'does not exist' } },
+        ],
+      },
+      {
+        no: 4, kanji: '向', strokes: '6画', on_reading: 'コウ', kun_reading: 'む・こう',
+        vocab: [
+          { word: '方向', reading: 'ほうこう', meaning: { en: 'direction' } },
+          { word: '向こう', reading: 'むこう', meaning: { en: 'over there' } },
+        ],
+      },
+    ];
+
+    const MOCK_DRILL_MEANING = [
+      { question_type: '正しい意味に◯をつけなさい', no: '①', word: '無料', question: null, choices: ['no charge', 'paid', 'discount', 'payment'], answer: 1 },
+      { question_type: '正しい意味に◯をつけなさい', no: '②', word: '方向', question: null, choices: ['direction', 'speed', 'distance', 'time'], answer: 1 },
+    ];
+
+    const MOCK_DRILL_READING = [
+      { question_type: '正しい読みに◯をつけなさい', no: '⑨', word: '空車', question: null, choices: ['からしゃ', 'こうしゃ', 'あきしゃ', 'くうしゃ'], answer: 4 },
+      { question_type: '正しい読みに◯をつけなさい', no: '⑩', word: 'お断り', question: null, choices: ['おこまわり', 'おとこわり', 'おことわり', 'おたちわり'], answer: 3 },
+    ];
+
+    const MOCK_DRILL_KANJI = [
+      { question_type: '正しい漢字に◯をつけなさい', no: '①', word: 'ちゅうしゃ', question: null, choices: ['駐車', '注車', '駐者', '駐社'], answer: 1 },
+      { question_type: '正しい漢字に◯をつけなさい', no: '②', word: 'むりょう', question: null, choices: ['無料', '無量', '無糧', '無領'], answer: 1 },
+    ];
+
+    const MOCK_EXAM = [
+      {
+        question_type: '＿＿＿のことばの読み方として最もよいものを、1・2・3・4から一つえらびなさい。',
+        no: 1, question: '「＿＿＿」と書いてあります。', word: '飛び出し注意',
+        choices: ['とびだししゅうい', 'とびだしちゅうい', 'とびだしじゅうい', 'よびだしじゅうい'], answer: 2,
+      },
+      {
+        question_type: '＿＿＿のことばの読み方として最もよいものを、1・2・3・4から一つえらびなさい。',
+        no: 2, question: '「＿＿＿」と書いてあります。', word: '駐車禁止',
+        choices: ['ちゅうしゃきんし', 'ちゅうじゃきんし', 'とめしゃきんし', 'ちゅうしゃきんじ'], answer: 1,
+      },
+    ];
+
+    const MOCK_DRILLS = {
+      drill_meaning: MOCK_DRILL_MEANING,
+      drill_reading: MOCK_DRILL_READING,
+      drill_kanji: MOCK_DRILL_KANJI,
+      exam: MOCK_EXAM,
+    };
+
+    let currentTab = 'flashcard';
+    let kanjiData = [];
+    let currentKanjiIndex = 0;
+
+    let drillType = null;
+    let questions = [];
+    let currentQuestionIndex = 0;
+    let selectedAnswer = null;
+    let score = 0;
+    let answered = false;
+
+    function showLoading(target) {
+      if (target === 'flashcard') {
+        document.getElementById('flashcardLoading').hidden = false;
+        document.getElementById('flashcardError').hidden = true;
+        document.getElementById('flashcardContent').style.display = 'none';
+      }
+    }
+
+    function hideLoading(target) {
+      if (target === 'flashcard') {
+        document.getElementById('flashcardLoading').hidden = true;
+        document.getElementById('flashcardContent').style.display = 'block';
+      }
+    }
+
+    function showError(target, msg) {
+      if (target === 'flashcard') {
+        document.getElementById('flashcardLoading').hidden = true;
+        document.getElementById('flashcardContent').style.display = 'none';
+        const el = document.getElementById('flashcardError');
+        el.hidden = false;
+        if (msg) el.querySelector('p').textContent = msg;
+      }
+    }
+
+    function getMeaning(vocab) {
+      if (!vocab?.meaning) return '';
+      return vocab.meaning.en || vocab.meaning.vi || '';
+    }
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    async function fetchKanjiList() {
+      const url = `${API_BASE}?api_key=${encodeURIComponent(API_KEY)}&category=kanji&type=list&lang=${encodeURIComponent(API_LANG())}&limit=300`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.length) return json.data;
+        throw new Error('empty');
+      } catch (err) {
+        console.warn('[kanji] API fallback to mock', err);
+        return MOCK_KANJI;
+      }
+    }
+
+    async function fetchDrillQuestions(type) {
+      const url = `${API_BASE}?api_key=${encodeURIComponent(API_KEY)}&category=kanji&type=${encodeURIComponent(type)}&lang=${encodeURIComponent(API_LANG())}&limit=200`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.length) return json.data;
+        throw new Error('empty');
+      } catch (err) {
+        console.warn('[kanji] drill API fallback to mock', type, err);
+        return MOCK_DRILLS[type] || [];
+      }
+    }
+
+    function updateFlashcardProgress() {
+      const total = kanjiData.length || 1;
+      const current = kanjiData.length ? currentKanjiIndex + 1 : 0;
+      document.getElementById('flashProgressCount').textContent = `${current} / ${total}`;
+      const pct = (current / total) * 100;
+      document.getElementById('flashProgressBar').style.width = pct + '%';
+    }
+
+    function renderKanjiCard(index) {
+      if (!kanjiData.length) return;
+      const item = kanjiData[index];
+      document.getElementById('kanjiChar').textContent = item.kanji;
+
+      let meta = `${item.strokes}　音読み：${item.on_reading}`;
+      if (item.kun_reading) meta += `　訓読み：${item.kun_reading}`;
+      document.getElementById('kanjiMeta').textContent = meta;
+
+      const vocabList = document.getElementById('vocabList');
+      vocabList.innerHTML = (item.vocab || []).map((v) => `
+        <div class="vocab-item">
+          <div class="vocab-row">
+            <span class="vocab-word">${v.word}</span>
+            <span class="vocab-reading">${v.reading}</span>
+          </div>
+          <div class="vocab-meaning">${getMeaning(v)}</div>
+        </div>
+      `).join('');
+
+      document.getElementById('btnPrev').disabled = index <= 0;
+      document.getElementById('btnNext').disabled = index >= kanjiData.length - 1;
+      updateFlashcardProgress();
+
+      const card = document.getElementById('kanjiCard');
+      card.style.animation = 'none';
+      void card.offsetWidth;
+      card.style.animation = 'fadeIn 0.15s ease';
+    }
+
+    function goToPrevKanji() {
+      if (currentKanjiIndex > 0) {
+        currentKanjiIndex -= 1;
+        renderKanjiCard(currentKanjiIndex);
+      }
+    }
+
+    function goToNextKanji() {
+      if (currentKanjiIndex < kanjiData.length - 1) {
+        currentKanjiIndex += 1;
+        renderKanjiCard(currentKanjiIndex);
+      }
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach((t) => {
+        t.classList.toggle('active', t.dataset.tab === tab);
+      });
+      document.getElementById('tab-flashcard').classList.toggle('active', tab === 'flashcard');
+      document.getElementById('tab-practice').classList.toggle('active', tab === 'practice');
+      window.scrollTo(0, 0);
+      if (tab === 'practice' && !drillType) {
+        backToDrillSelector();
+      }
+    }
+
+    function updatePracticeProgress() {
+      const total = questions.length || 1;
+      const current = questions.length ? currentQuestionIndex + 1 : 0;
+      document.getElementById('practiceProgressCount').textContent = `${current} / ${total}`;
+      document.getElementById('practiceProgressLabel').textContent = drillLabel(drillType) || t('tabPractice');
+      const pct = (current / total) * 100;
+      document.getElementById('practiceProgressBar').style.width = pct + '%';
+    }
+
+    async function startDrill(type) {
+      drillType = type;
+      const raw = await fetchDrillQuestions(type);
+      questions = shuffleArray(raw).slice(0, SESSION_LIMIT);
+      currentQuestionIndex = 0;
+      selectedAnswer = null;
+      score = 0;
+      answered = false;
+
+      document.getElementById('drillSelector').style.display = 'none';
+      document.getElementById('practiceBody').classList.remove('hidden');
+      document.getElementById('questionArea').hidden = false;
+      document.getElementById('resultArea').hidden = true;
+
+      if (!questions.length) {
+        document.getElementById('questionArea').innerHTML = '<div class="error-card"><p>問題がありません。</p><button class="btn-retry" type="button" onclick="backToDrillSelector()">戻る</button></div>';
+        return;
+      }
+      renderQuestion(0);
+    }
+
+    function renderQuestion(index) {
+      answered = false;
+      selectedAnswer = null;
+      currentQuestionIndex = index;
+      const q = questions[index];
+
+      document.getElementById('questionTypeBadge').textContent = q.question_type || '';
+      const qText = document.getElementById('questionText');
+      const qWord = document.getElementById('questionWord');
+
+      if (q.question) {
+        qText.textContent = q.question;
+        qText.hidden = false;
+      } else {
+        qText.hidden = true;
+        qText.textContent = '';
+      }
+
+      if (q.word) {
+        qWord.textContent = q.word;
+        qWord.hidden = false;
+      } else {
+        qWord.hidden = true;
+      }
+
+      const choicesList = document.getElementById('choicesList');
+      choicesList.innerHTML = q.choices.map((c, i) => `
+        <button class="choice-btn" data-index="${i}" type="button">
+          <span class="choice-num">${CHOICE_MARKS[i] || (i + 1)}</span>
+          <span>${c}</span>
+        </button>
+      `).join('');
+
+      choicesList.querySelectorAll('.choice-btn').forEach((btn) => {
+        btn.addEventListener('click', () => selectAnswer(Number(btn.dataset.index)));
+      });
+
+      document.getElementById('feedbackArea').hidden = true;
+      updatePracticeProgress();
+    }
+
+    function selectAnswer(choiceIndex) {
+      if (answered) return;
+      selectedAnswer = choiceIndex;
+      document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+        btn.classList.toggle('selected', i === choiceIndex);
+      });
+      submitAnswer();
+    }
+
+    function submitAnswer() {
+      if (answered || selectedAnswer === null) return;
+      answered = true;
+      const q = questions[currentQuestionIndex];
+      const correctIndex = q.answer - 1;
+      const isCorrect = selectedAnswer === correctIndex;
+      if (isCorrect) score += 1;
+
+      document.querySelectorAll('.choice-btn').forEach((btn, i) => {
+        btn.disabled = true;
+        btn.classList.remove('selected');
+        if (i === correctIndex) btn.classList.add('correct');
+        else if (i === selectedAnswer && !isCorrect) btn.classList.add('wrong');
+        else if (!isCorrect && i === correctIndex) btn.classList.add('reveal-correct');
+      });
+
+      const feedback = document.getElementById('feedbackArea');
+      feedback.hidden = false;
+      feedback.className = 'feedback-panel ' + (isCorrect ? 'correct' : 'incorrect');
+      feedback.innerHTML = `
+        <div class="feedback-title ${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? t('correct') : t('incorrect')}</div>
+        <div class="feedback-answer">${t('correctAnswer')}：${CHOICE_MARKS[correctIndex] || (correctIndex + 1)} ${q.choices[correctIndex]}</div>
+        <button class="btn-next" id="btnNextQuestion" type="button">次の問題へ →</button>
+      `;
+      document.getElementById('btnNextQuestion').addEventListener('click', goToNextQuestion);
+    }
+
+    function goToNextQuestion() {
+      if (currentQuestionIndex + 1 < questions.length) {
+        renderQuestion(currentQuestionIndex + 1);
+      } else {
+        showResult();
+      }
+    }
+
+    function showResult() {
+      document.getElementById('questionArea').hidden = true;
+      const resultEl = document.getElementById('resultArea');
+      resultEl.hidden = false;
+      const total = questions.length;
+      const pct = total > 0 ? Math.round((score / total) * 100) : 0;
+
+      if (total > 0 && typeof AppProgress !== 'undefined') {
+        AppProgress.recordSession({
+          module: 'kanji',
+          mode: drillType || 'practice',
+          label: drillLabel(drillType) || t('title'),
+          score,
+          total,
+        });
+      }
+
+      resultEl.innerHTML = `
+        <div class="result-emoji">🎉</div>
+        <div class="result-title">${t('resultDone')}</div>
+        <div class="result-score">${score} / ${total}</div>
+        <div class="result-label">${t('resultScoreLabel')}</div>
+        <div class="result-bar-wrap"><div class="result-bar" id="resultBar"></div></div>
+        <div class="result-pct">${pct}%</div>
+        <div class="result-actions">
+          <button class="btn-result-primary" id="btnRetry" type="button">${t('resultRetry')}</button>
+          <button class="btn-result-secondary" id="btnBackSelector" type="button">${t('resultBackSelector')}</button>
+        </div>
+      `;
+
+      requestAnimationFrame(() => {
+        document.getElementById('resultBar').style.width = pct + '%';
+      });
+
+      document.getElementById('btnRetry').addEventListener('click', retryDrill);
+      document.getElementById('btnBackSelector').addEventListener('click', backToDrillSelector);
+    }
+
+    function retryDrill() {
+      if (drillType) startDrill(drillType);
+    }
+
+    function backToDrillSelector() {
+      drillType = null;
+      questions = [];
+      currentQuestionIndex = 0;
+      score = 0;
+      answered = false;
+
+      document.getElementById('drillSelector').style.display = 'block';
+      document.getElementById('practiceBody').classList.add('hidden');
+      document.getElementById('questionArea').hidden = false;
+      document.getElementById('resultArea').hidden = true;
+
+      document.getElementById('questionArea').innerHTML = `
+        <div class="question-card" id="questionCard">
+          <span class="type-badge" id="questionTypeBadge"></span>
+          <p class="question-text" id="questionText"></p>
+          <div class="question-word" id="questionWord" hidden></div>
+        </div>
+        <div class="choices-list" id="choicesList"></div>
+        <div id="feedbackArea" hidden></div>
+      `;
+    }
+
+    async function init() {
+      showLoading('flashcard');
+      try {
+        kanjiData = await fetchKanjiList();
+        if (!kanjiData.length) throw new Error('no data');
+        currentKanjiIndex = 0;
+        hideLoading('flashcard');
+        renderKanjiCard(0);
+      } catch {
+        showError('flashcard', 'データを読み込めませんでした。再試行してください。');
+      }
+    }
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+    });
+
+    document.getElementById('btnPrev').addEventListener('click', goToPrevKanji);
+    document.getElementById('btnNext').addEventListener('click', goToNextKanji);
+
+    document.querySelectorAll('.drill-type-btn').forEach((btn) => {
+      btn.addEventListener('click', () => startDrill(btn.dataset.drill));
+    });
+
+    document.addEventListener('DOMContentLoaded', () => { applyI18n(); init(); });
+    window.addEventListener('app:langchange', refreshUi);
+  </script>
+</body>
+</html>

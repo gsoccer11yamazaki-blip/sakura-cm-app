@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>企業管理画面 — Build Bridge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #060a0f; --bg-card: #0d1117; --bg-surface: #161b22;
+      --border: #21262d; --text: #e6edf3; --muted: #7d8590;
+      --accent: #1D9E75; --accent-light: #14b8a6;
+      --red: #ef4444; --orange: #f97316; --blue: #3b82f6;
+      --radius: 10px; --shadow: 0 4px 24px rgba(0,0,0,.5);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* ── サイドバー ── */
+    .sidebar {
+      width: 220px; min-height: 100vh; background: var(--bg-card);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; z-index: 100; transition: transform 0.25s;
+    }
+    .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-logo .logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    .sidebar-logo .role-badge {
+      display: inline-block; margin-top: 6px; font-size: 0.7rem; font-weight: 600;
+      background: rgba(249,115,22,0.12); color: #fdba74;
+      border: 1px solid rgba(249,115,22,0.3); border-radius: 999px; padding: 2px 10px;
+    }
+    .sidebar-user { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); }
+    .sidebar-user strong { display: block; color: var(--text); font-size: 0.85rem; margin-bottom: 2px; }
+    .nav-list { list-style: none; padding: 10px 8px; flex: 1; }
+    .nav-list li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: var(--radius); font-size: 0.88rem; font-weight: 500;
+      color: var(--muted); text-decoration: none; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-list li a:hover { background: var(--bg-surface); color: var(--text); }
+    .nav-list li a.active { background: rgba(29,158,117,0.15); color: var(--accent-light); }
+    .nav-list li a .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-bottom { padding: 12px 8px; border-top: 1px solid var(--border); }
+    .btn-logout {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px;
+      background: none; border: none; border-radius: var(--radius); font-family: inherit;
+      font-size: 0.88rem; font-weight: 500; color: var(--red); cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-logout:hover { background: rgba(239,68,68,0.1); }
+
+    /* ── メインコンテンツ ── */
+    .main { margin-left: 220px; flex: 1; padding: 28px 24px; min-height: 100vh; }
+    .page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+
+    /* ── カード ── */
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: var(--text); }
+    .stat-icon { font-size: 1.4rem; margin-bottom: 8px; }
+
+    /* ── テーブル ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th { padding: 10px 14px; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-surface); }
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 0.9rem; }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; }
+
+    /* ── セクションヘッダ ── */
+    .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .section-title { font-size: 1rem; font-weight: 700; }
+    .section-desc { font-size: 0.82rem; color: var(--muted); margin-top: 4px; }
+
+    /* ── インフォバナー ── */
+    .info-banner {
+      background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.25);
+      border-radius: var(--radius); padding: 16px 20px;
+      display: flex; align-items: flex-start; gap: 12px; margin-top: 20px;
+    }
+    .info-banner .info-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .info-banner p { font-size: 0.85rem; color: #93c5fd; line-height: 1.6; }
+
+    /* ── ローディング ── */
+    .loading-screen {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 9999; gap: 16px;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    .loading-screen p { color: var(--muted); font-size: 0.9rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── ハンバーガーメニュー ── */
+    .hamburger {
+      display: none; position: fixed; top: 14px; left: 14px; z-index: 200;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+      padding: 8px 10px; cursor: pointer; flex-direction: column; gap: 5px;
+    }
+    .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); border-radius: 2px; transition: all 0.2s; }
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+
+    /* ── タブ ── */
+    .page-section { display: none; }
+    .page-section.active { display: block; }
+
+    /* ── ボタン ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary { background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* ── モーダル ── */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; align-items: center; justify-content: center; }
+    .modal-backdrop.open { display: flex; }
+    .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 100%; max-width: 440px; margin: 16px; }
+    .modal-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+    .form-input {
+      width: 100%; padding: 10px 14px; background: var(--bg-surface);
+      border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); font-family: inherit; font-size: 0.9rem;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus { outline: none; border-color: var(--accent); }
+    .form-hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+
+    /* ── トースト ── */
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ── レスポンシブ ── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main { margin-left: 0; padding: 20px 16px; padding-top: 60px; }
+      .hamburger { display: flex; }
+      .overlay.open { display: block; }
+      .stat-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ローディング -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="spinner"></div>
+  <p>読み込み中...</p>
+</div>
+
+<!-- オーバーレイ（モバイル） -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+<!-- ハンバーガー -->
+<button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="メニュー">
+  <span></span><span></span><span></span>
+</button>
+
+<!-- サイドバー -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo">🌸 Build Bridge</div>
+    <span class="role-badge">企業管理者</span>
+  </div>
+  <div class="sidebar-user">
+    <strong id="sidebarName">—</strong>
+    <span id="sidebarCompany">—</span>
+  </div>
+  <ul class="nav-list">
+    <li><a href="#" class="active" data-section="dashboard" onclick="showSection('dashboard',this)"><span class="icon">📊</span>ダッシュボード</a></li>
+    <li><a href="#" data-section="employees" onclick="showSection('employees',this)"><span class="icon">👥</span>社員一覧</a></li>
+  </ul>
+  <div class="sidebar-bottom">
+    <button class="btn-logout" onclick="handleLogout()">🚪 ログアウト</button>
+  </div>
+</nav>
+
+<!-- メインコンテンツ -->
+<main class="main">
+
+  <!-- ① ダッシュボード -->
+  <section class="page-section active" id="sec-dashboard">
+    <div class="page-title">📊 ダッシュボード</div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-label">社員数</div>
+        <div class="stat-value" id="statEmployees">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-label">会社名</div>
+        <div class="stat-value" style="font-size:1.1rem; padding-top:8px;" id="statCompany">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">📋 サービスについて</div>
+      <div class="info-banner" style="margin-top:16px;">
+        <div class="info-icon">📬</div>
+        <p>詳細なレポート（月次進捗・学習時間・正答率・模擬試験結果）は、管理者（Build Bridge）からメールで送付されます。<br>ご不明な点は Build Bridge までお問い合わせください。</p>
+      </div>
+
+      <div class="info-banner" style="margin-top:12px; background: rgba(29,158,117,0.1); border-color: rgba(29,158,117,0.25);">
+        <div class="info-icon">⚠️</div>
+        <p style="color: #6ee7b7;">アラート通知：週1時間未満の学習・カリキュラム1ヶ月遅延・模擬試験3回連続不合格が発生した場合、自動でメール通知が届きます。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ② 社員一覧 -->
+  <section class="page-section" id="sec-employees">
+    <div class="page-title">👥 社員一覧</div>
+
+    <div class="card">
+      <div class="section-header">
+        <div>
+          <div class="section-title">登録社員</div>
+          <div class="section-desc">自社に所属する学習者の一覧です</div>
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">＋ 社員を追加</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>表示名</th>
+              <th>登録日</th>
+            </tr>
+          </thead>
+          <tbody id="employeeTableBody">
+            <tr><td colspan="2"><div class="empty-state"><div class="spinner" style="margin:0 auto 12px;"></div>読み込み中...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 社員追加モーダル -->
+<div class="modal-backdrop" id="addModalBackdrop">
+  <div class="modal">
+    <div class="modal-title">👤 社員を追加</div>
+    <div class="form-group">
+      <label class="form-label">メールアドレス <span style="color:var(--red)">*</span></label>
+      <input type="email" class="form-input" id="newEmail" placeholder="employee@example.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">表示名 <span style="color:var(--red)">*</span></label>
+      <input type="text" class="form-input" id="newName" placeholder="例：田中 太郎">
+    </div>
+    <div class="form-group">
+      <label class="form-label">仮パスワード <span style="color:var(--red)">*</span></label>
+      <input type="password" class="form-input" id="newPassword" placeholder="8文字以上">
+      <div class="form-hint">※ 初回ログイン後にパスワードを変更するよう本人に伝えてください</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAddModal()">キャンセル</button>
+      <button class="btn btn-primary" id="addBtn" onclick="addEmployee()">登録する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://ztedlnyeeodvdyxzqpiz.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_WFtrwdK97JIawHiQZyLELg_h08mZifP';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+
+  // ── 初期化 ──
+  window.addEventListener('DOMContentLoaded', async () => {
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { location.href = 'login.html'; return; }
+
+      const { data: userData, error } = await sb
+        .from('bb_users')
+        .select('role, display_name, company_id')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error || !userData) { location.href = 'login.html'; return; }
+      if (userData.role !== 'company_admin') { location.href = 'login.html'; return; }
+
+      currentUser = { ...userData, id: session.user.id, email: session.user.email };
+
+      // 会社名取得
+      let companyName = '—';
+      if (currentUser.company_id) {
+        const { data: comp } = await sb.from('companies').select('name').eq('id', currentUser.company_id).single();
+        if (comp) companyName = comp.name;
+      }
+
+      document.getElementById('sidebarName').textContent = currentUser.display_name || currentUser.email || '—';
+      document.getElementById('sidebarCompany').textContent = companyName;
+      document.getElementById('statCompany').textContent = companyName;
+
+      await loadDashboard();
+
+      document.getElementById('loadingScreen').style.display = 'none';
+    } catch (e) {
+      console.error(e);
+      location.href = 'login.html';
+    }
+  });
+
+  // ── ダッシュボード ──
+  async function loadDashboard() {
+    if (!currentUser.company_id) {
+      document.getElementById('statEmployees').textContent = '0';
+      return;
+    }
+    const { count } = await sb
+      .from('bb_users')
+      .select('*', { count: 'exact', head: true })
+      .eq('company_id', currentUser.company_id)
+      .eq('role', 'user');
+    document.getElementById('statEmployees').textContent = count ?? 0;
+  }
+
+  // ── 社員一覧 ──
+  async function loadEmployees() {
+    const tbody = document.getElementById('employeeTableBody');
+    tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><div class="spinner" style="margin:0 auto 12px;"></div>読み込み中...</div></td></tr>';
+
+    if (!currentUser.company_id) {
+      tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><div class="empty-icon">👥</div>会社が未設定です</div></td></tr>';
+      return;
+    }
+
+    const { data, error } = await sb
+      .from('bb_users')
+      .select('display_name, created_at')
+      .eq('company_id', currentUser.company_id)
+      .eq('role', 'user')
+      .order('created_at', { ascending: false });
+
+    if (error) { showToast('社員一覧の取得に失敗しました', 'error'); return; }
+
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="2"><div class="empty-state"><div class="empty-icon">👥</div>登録された社員がいません</div></td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = data.map(u => `
+      <tr>
+        <td>${escHtml(u.display_name || '—')}</td>
+        <td>${formatDate(u.created_at)}</td>
+      </tr>
+    `).join('');
+  }
+
+  // ── セクション切替 ──
+  function showSection(name, el) {
+    document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-list a').forEach(a => a.classList.remove('active'));
+    document.getElementById('sec-' + name).classList.add('active');
+    el.classList.add('active');
+    closeSidebar();
+    if (name === 'employees') loadEmployees();
+    return false;
+  }
+
+  // ── ログアウト ──
+  async function handleLogout() {
+    await sb.auth.signOut();
+    location.href = 'login.html';
+  }
+
+  // ── ハンバーガーメニュー ──
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('open');
+  }
+  function closeSidebar() {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('overlay').classList.remove('open');
+  }
+
+  // ── ユーティリティ ──
+  function formatDate(str) {
+    if (!str) return '—';
+    const d = new Date(str);
+    return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  // ── 社員追加モーダル ──
+  function openAddModal() {
+    document.getElementById('newEmail').value = '';
+    document.getElementById('newName').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('addModalBackdrop').classList.add('open');
+  }
+  function closeAddModal() {
+    document.getElementById('addModalBackdrop').classList.remove('open');
+  }
+  async function addEmployee() {
+    const email = document.getElementById('newEmail').value.trim();
+    const name = document.getElementById('newName').value.trim();
+    const password = document.getElementById('newPassword').value;
+    if (!email || !name || !password) { showToast('全項目を入力してください', 'error'); return; }
+    if (password.length < 8) { showToast('パスワードは8文字以上で入力してください', 'error'); return; }
+    const btn = document.getElementById('addBtn');
+    btn.disabled = true; btn.textContent = '登録中...';
+    try {
+      // 管理者セッションを保存（signUp後に上書きされるため）
+      const { data: { session: adminSession } } = await sb.auth.getSession();
+
+      const { data, error } = await sb.auth.signUp({
+        email,
+        password,
+        options: { data: { display_name: name } }
+      });
+      if (error) throw error;
+      const userId = data.user.id;
+      const { error: dbError } = await sb.from('bb_users').insert({
+        id: userId,
+        display_name: name,
+        role: 'user',
+        company_id: currentUser.company_id,
+        language: 'ja'
+      });
+      if (dbError) throw dbError;
+
+      // 管理者セッションを復元してから一覧を更新
+      await sb.auth.setSession({
+        access_token: adminSession.access_token,
+        refresh_token: adminSession.refresh_token
+      });
+
+      showToast('社員を登録しました');
+      closeAddModal();
+      await loadEmployees();
+      await loadDashboard();
+    } catch(e) {
+      let msg = '登録に失敗しました：' + e.message;
+      if (e.message.includes('already registered') || e.message.includes('already been registered')) {
+        msg = 'このメールアドレスはすでに登録されています';
+      }
+      showToast(msg, 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '登録する';
+    }
+  }
+
+  function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+      position: fixed; top: 20px; right: 20px; z-index: 9999;
+      padding: 12px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+      background: ${type === 'success' ? '#1D9E75' : '#ef4444'}; color: white;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3); font-family: 'Noto Sans JP', sans-serif;
+      animation: fadeIn 0.2s ease;
+    `;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  }
+</script>
+</body>
+</html>

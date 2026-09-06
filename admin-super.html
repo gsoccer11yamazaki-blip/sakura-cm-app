@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理画面 — Build Bridge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #060a0f; --bg-card: #0d1117; --bg-surface: #161b22;
+      --border: #21262d; --text: #e6edf3; --muted: #7d8590;
+      --accent: #1D9E75; --accent-light: #14b8a6;
+      --red: #ef4444; --orange: #f97316; --blue: #3b82f6;
+      --radius: 10px; --shadow: 0 4px 24px rgba(0,0,0,.5);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* ── サイドバー ── */
+    .sidebar {
+      width: 220px; min-height: 100vh; background: var(--bg-card);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; z-index: 100; transition: transform 0.25s;
+    }
+    .sidebar-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-logo .logo { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+    .sidebar-logo .role-badge {
+      display: inline-block; margin-top: 6px; font-size: 0.7rem; font-weight: 600;
+      background: rgba(29,158,117,0.15); color: var(--accent-light);
+      border: 1px solid rgba(29,158,117,0.3); border-radius: 999px; padding: 2px 10px;
+    }
+    .sidebar-user { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 0.8rem; color: var(--muted); }
+    .sidebar-user strong { display: block; color: var(--text); font-size: 0.85rem; margin-bottom: 2px; }
+    .nav-list { list-style: none; padding: 10px 8px; flex: 1; }
+    .nav-list li a {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: var(--radius); font-size: 0.88rem; font-weight: 500;
+      color: var(--muted); text-decoration: none; cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .nav-list li a:hover { background: var(--bg-surface); color: var(--text); }
+    .nav-list li a.active { background: rgba(29,158,117,0.15); color: var(--accent-light); }
+    .nav-list li a .icon { font-size: 1rem; width: 20px; text-align: center; }
+    .sidebar-bottom { padding: 12px 8px; border-top: 1px solid var(--border); }
+    .btn-logout {
+      display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px;
+      background: none; border: none; border-radius: var(--radius); font-family: inherit;
+      font-size: 0.88rem; font-weight: 500; color: var(--red); cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-logout:hover { background: rgba(239,68,68,0.1); }
+
+    /* ── メインコンテンツ ── */
+    .main { margin-left: 220px; flex: 1; padding: 28px 24px; min-height: 100vh; }
+    .page-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+
+    /* ── カード ── */
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .stat-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .stat-value { font-size: 2rem; font-weight: 700; color: var(--text); }
+    .stat-icon { font-size: 1.4rem; margin-bottom: 8px; }
+
+    /* ── テーブル ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead th { padding: 10px 14px; text-align: left; font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid var(--border); }
+    tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg-surface); }
+
+    /* ── バッジ ── */
+    .badge { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .badge-super { background: rgba(239,68,68,0.15); color: #fca5a5; border: 1px solid rgba(239,68,68,0.3); }
+    .badge-company { background: rgba(249,115,22,0.15); color: #fdba74; border: 1px solid rgba(249,115,22,0.3); }
+    .badge-user { background: rgba(29,158,117,0.15); color: var(--accent-light); border: 1px solid rgba(29,158,117,0.3); }
+
+    /* ── ボタン ── */
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; }
+    .btn:hover { opacity: 0.85; }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-secondary { background: var(--bg-surface); color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.25); }
+    .btn-sm { padding: 5px 12px; font-size: 0.78rem; }
+    .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+    .filter-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ── フォーム ── */
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+    .form-group input, .form-group select {
+      width: 100%; padding: 10px 14px; background: var(--bg-surface);
+      border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+      font-family: inherit; font-size: 0.9rem; outline: none; transition: border-color 0.15s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--accent); }
+    .form-group select option { background: var(--bg-surface); }
+
+    /* ── モーダル ── */
+    .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 500; align-items: center; justify-content: center; padding: 20px; }
+    .modal-backdrop.show { display: flex; }
+    .modal { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; max-width: 440px; width: 100%; box-shadow: var(--shadow); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-title { font-size: 1rem; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; padding: 4px; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* ── セクション ── */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* ── トースト ── */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 12px 18px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; color: #fff; box-shadow: var(--shadow); animation: slideIn 0.25s ease; max-width: 320px; }
+    .toast.success { background: var(--accent); }
+    .toast.error { background: var(--red); }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* ── ローディング ── */
+    .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-area { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: var(--muted); font-size: 0.88rem; }
+
+    /* ── 空状態 ── */
+    .empty-state { text-align: center; padding: 48px 20px; color: var(--muted); font-size: 0.88rem; }
+    .empty-state .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.4; }
+
+    /* ── ハンバーガー（モバイル） ── */
+    .hamburger { display: none; position: fixed; top: 14px; left: 14px; z-index: 200; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; cursor: pointer; font-size: 1.1rem; }
+    .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 99; }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay.show { display: block; }
+      .main { margin-left: 0; padding: 64px 16px 24px; }
+      .hamburger { display: block; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .stat-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<button class="hamburger" id="hamburger">☰</button>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo">Build Bridge</div>
+    <span class="role-badge">SUPER ADMIN</span>
+  </div>
+  <div class="sidebar-user">
+    <strong id="sidebarName">読み込み中...</strong>
+    管理者
+  </div>
+  <ul class="nav-list">
+    <li><a href="#" class="active" data-section="dashboard"><span class="icon">📊</span>ダッシュボード</a></li>
+    <li><a href="#" data-section="companies"><span class="icon">🏢</span>会社管理</a></li>
+    <li><a href="#" data-section="users"><span class="icon">👤</span>ユーザー管理</a></li>
+    <li><a href="#" data-section="alerts"><span class="icon">🚨</span>アラート</a></li>
+  </ul>
+  <div class="sidebar-bottom">
+    <button class="btn-logout" id="btnLogout">🚪 ログアウト</button>
+  </div>
+</aside>
+
+<main class="main">
+
+  <!-- ダッシュボード -->
+  <section class="section active" id="sec-dashboard">
+    <div class="page-title">📊 ダッシュボード</div>
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-icon">🏢</div>
+        <div class="stat-label">登録会社数</div>
+        <div class="stat-value" id="statCompanies">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">👤</div>
+        <div class="stat-label">学習者数</div>
+        <div class="stat-value" id="statUsers">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🔑</div>
+        <div class="stat-label">管理者数</div>
+        <div class="stat-value" id="statAdmins">—</div>
+      </div>
+    </div>
+    <div class="card">
+      <p style="color:var(--muted);font-size:0.88rem;line-height:1.7;">
+        ようこそ、<strong id="dashWelcomeName" style="color:var(--text)"></strong> さん。<br>
+        サイドバーから各管理機能にアクセスできます。
+      </p>
+    </div>
+  </section>
+
+  <!-- 会社管理 -->
+  <section class="section" id="sec-companies">
+    <div class="page-title">🏢 会社管理</div>
+    <div class="toolbar">
+      <div style="font-size:0.85rem;color:var(--muted);" id="companyCount">読み込み中...</div>
+      <button class="btn btn-primary" id="btnAddCompany">＋ 新規追加</button>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>会社名</th>
+              <th>会社コード</th>
+              <th>登録日</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="companiesBody">
+            <tr><td colspan="4"><div class="loading-area"><div class="spinner"></div>読み込み中...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ユーザー管理 -->
+  <section class="section" id="sec-users">
+    <div class="page-title">👤 ユーザー管理</div>
+    <div class="toolbar">
+      <div class="filter-row">
+        <select id="filterCompany" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 12px;font-family:inherit;font-size:0.83rem;outline:none;">
+          <option value="">すべての会社</option>
+        </select>
+        <select id="filterRole" style="background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:7px 12px;font-family:inherit;font-size:0.83rem;outline:none;">
+          <option value="">すべてのロール</option>
+          <option value="super_admin">super_admin</option>
+          <option value="company_admin">company_admin</option>
+          <option value="user">user</option>
+        </select>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;">
+        ℹ️ 新規ユーザーはSupabaseダッシュボードから招待後、ここでロール設定
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>表示名</th>
+              <th>ロール</th>
+              <th>所属会社</th>
+              <th>登録日</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="usersBody">
+            <tr><td colspan="5"><div class="loading-area"><div class="spinner"></div>読み込み中...</div></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- アラート -->
+  <section class="section" id="sec-alerts">
+    <div class="page-title">🚨 アラート</div>
+    <div class="card">
+      <div class="empty-state">
+        <div class="empty-icon">🔔</div>
+        <p style="font-weight:600;color:var(--text);margin-bottom:8px;">アラート機能は準備中です</p>
+        <p>週1時間未満の学習・進捗遅延・模擬試験3回連続不合格の<br>アラートがここに表示される予定です。</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- 会社追加モーダル -->
+<div class="modal-backdrop" id="modalCompany">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modalCompanyTitle">会社を追加</span>
+      <button class="modal-close" id="modalCompanyClose">✕</button>
+    </div>
+    <div class="form-group">
+      <label>会社名</label>
+      <input type="text" id="inputCompanyName" placeholder="例：株式会社〇〇建設">
+    </div>
+    <div class="form-group">
+      <label>会社コード（slug）</label>
+      <input type="text" id="inputCompanySlug" placeholder="例：BB-01-A001">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="modalCompanyCancel">キャンセル</button>
+      <button class="btn btn-primary" id="modalCompanySave">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ユーザー編集モーダル -->
+<div class="modal-backdrop" id="modalUser">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">ロール・会社を変更</span>
+      <button class="modal-close" id="modalUserClose">✕</button>
+    </div>
+    <input type="hidden" id="editUserId">
+    <div class="form-group">
+      <label>表示名</label>
+      <input type="text" id="editDisplayName" readonly style="opacity:0.6;cursor:not-allowed;">
+    </div>
+    <div class="form-group">
+      <label>ロール</label>
+      <select id="editRole">
+        <option value="user">user（学習者）</option>
+        <option value="company_admin">company_admin（企業担当者）</option>
+        <option value="super_admin">super_admin（管理者）</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>所属会社</label>
+      <select id="editCompany">
+        <option value="">未設定</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="modalUserCancel">キャンセル</button>
+      <button class="btn btn-primary" id="modalUserSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://ztedlnyeeodvdyxzqpiz.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_WFtrwdK97JIawHiQZyLELg_h08mZifP';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let currentUser = null;
+  let allUsers = [];
+  let allCompanies = [];
+  let editingCompanyId = null;
+
+  // ── トースト ──
+  function toast(msg, type = 'success') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.getElementById('toastContainer').appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  // ── 認証チェック ──
+  async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { location.href = 'login.html'; return; }
+
+    const { data: userData, error } = await sb
+      .from('bb_users')
+      .select('role, display_name, company_id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (error || !userData || userData.role !== 'super_admin') {
+      location.href = 'login.html';
+      return;
+    }
+
+    currentUser = { ...userData, id: session.user.id };
+    const name = userData.display_name || session.user.email || '管理者';
+    document.getElementById('sidebarName').textContent = name;
+    document.getElementById('dashWelcomeName').textContent = name;
+
+    await Promise.all([loadDashboard(), loadCompanies(), loadUsers()]);
+  }
+
+  // ── ダッシュボード ──
+  async function loadDashboard() {
+    const [{ count: cCount }, { count: uCount }, { count: aCount }] = await Promise.all([
+      sb.from('companies').select('*', { count: 'exact', head: true }),
+      sb.from('bb_users').select('*', { count: 'exact', head: true }).eq('role', 'user'),
+      sb.from('bb_users').select('*', { count: 'exact', head: true }).eq('role', 'company_admin'),
+    ]);
+    document.getElementById('statCompanies').textContent = cCount ?? 0;
+    document.getElementById('statUsers').textContent = uCount ?? 0;
+    document.getElementById('statAdmins').textContent = aCount ?? 0;
+  }
+
+  // ── 会社管理 ──
+  async function loadCompanies() {
+    const { data, error } = await sb.from('companies').select('*').order('created_at', { ascending: false });
+    if (error) { toast('会社データの取得に失敗しました', 'error'); return; }
+    allCompanies = data || [];
+    renderCompanies();
+    // フィルタープルダウンを更新
+    const sel = document.getElementById('filterCompany');
+    const editSel = document.getElementById('editCompany');
+    [sel, editSel].forEach(s => {
+      const first = s.querySelector('option:first-child');
+      s.innerHTML = '';
+      if (s === sel) s.appendChild(Object.assign(document.createElement('option'), { value: '', textContent: 'すべての会社' }));
+      else s.appendChild(Object.assign(document.createElement('option'), { value: '', textContent: '未設定' }));
+      allCompanies.forEach(c => {
+        s.appendChild(Object.assign(document.createElement('option'), { value: c.id, textContent: c.name }));
+      });
+    });
+  }
+
+  function renderCompanies() {
+    const tbody = document.getElementById('companiesBody');
+    document.getElementById('companyCount').textContent = `${allCompanies.length}社`;
+    if (!allCompanies.length) {
+      tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state"><div class="empty-icon">🏢</div>会社が登録されていません</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = allCompanies.map(c => `
+      <tr>
+        <td><strong>${esc(c.name)}</strong></td>
+        <td><code style="font-size:0.8rem;color:var(--muted)">${esc(c.slug)}</code></td>
+        <td style="color:var(--muted);font-size:0.82rem">${fmtDate(c.created_at)}</td>
+        <td>
+          <button class="btn btn-secondary btn-sm" onclick="openEditCompany('${c.id}')">編集</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCompany('${c.id}','${esc(c.name)}')">削除</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function openAddCompany() {
+    editingCompanyId = null;
+    document.getElementById('modalCompanyTitle').textContent = '会社を追加';
+    document.getElementById('inputCompanyName').value = '';
+    document.getElementById('inputCompanySlug').value = '';
+    document.getElementById('modalCompany').classList.add('show');
+  }
+
+  function openEditCompany(id) {
+    const c = allCompanies.find(x => x.id === id);
+    if (!c) return;
+    editingCompanyId = id;
+    document.getElementById('modalCompanyTitle').textContent = '会社を編集';
+    document.getElementById('inputCompanyName').value = c.name;
+    document.getElementById('inputCompanySlug').value = c.slug;
+    document.getElementById('modalCompany').classList.add('show');
+  }
+
+  async function saveCompany() {
+    const name = document.getElementById('inputCompanyName').value.trim();
+    const slug = document.getElementById('inputCompanySlug').value.trim();
+    if (!name || !slug) { toast('会社名とコードは必須です', 'error'); return; }
+    const btn = document.getElementById('modalCompanySave');
+    btn.disabled = true; btn.textContent = '保存中...';
+    try {
+      if (editingCompanyId) {
+        const { error } = await sb.from('companies').update({ name, slug, updated_at: new Date().toISOString() }).eq('id', editingCompanyId);
+        if (error) throw error;
+        toast('会社情報を更新しました');
+      } else {
+        const { error } = await sb.from('companies').insert({ name, slug });
+        if (error) throw error;
+        toast('会社を追加しました');
+      }
+      document.getElementById('modalCompany').classList.remove('show');
+      await loadCompanies();
+      await loadDashboard();
+    } catch (e) {
+      toast(e.message || '保存に失敗しました', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '保存';
+    }
+  }
+
+  async function deleteCompany(id, name) {
+    if (!confirm(`「${name}」を削除しますか？\n所属するユーザーの会社設定が解除されます。`)) return;
+    const { error } = await sb.from('companies').delete().eq('id', id);
+    if (error) { toast('削除に失敗しました', 'error'); return; }
+    toast('会社を削除しました');
+    await loadCompanies();
+    await loadDashboard();
+  }
+
+  // ── ユーザー管理 ──
+  async function loadUsers() {
+    const { data, error } = await sb
+      .from('bb_users')
+      .select('id, display_name, role, company_id, created_at, companies(name)')
+      .order('created_at', { ascending: false });
+    if (error) { toast('ユーザーデータの取得に失敗しました', 'error'); return; }
+    allUsers = data || [];
+    renderUsers();
+  }
+
+  function renderUsers() {
+    const filterCompany = document.getElementById('filterCompany').value;
+    const filterRole = document.getElementById('filterRole').value;
+    let list = allUsers;
+    if (filterCompany) list = list.filter(u => u.company_id === filterCompany);
+    if (filterRole) list = list.filter(u => u.role === filterRole);
+    const tbody = document.getElementById('usersBody');
+    if (!list.length) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-icon">👤</div>ユーザーが見つかりません</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = list.map(u => `
+      <tr>
+        <td><strong>${esc(u.display_name || '（未設定）')}</strong></td>
+        <td>${roleBadge(u.role)}</td>
+        <td style="color:var(--muted);font-size:0.82rem">${esc(u.companies?.name || '未所属')}</td>
+        <td style="color:var(--muted);font-size:0.82rem">${fmtDate(u.created_at)}</td>
+        <td><button class="btn btn-secondary btn-sm" onclick="openEditUser('${u.id}')">編集</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function openEditUser(id) {
+    const u = allUsers.find(x => x.id === id);
+    if (!u) return;
+    document.getElementById('editUserId').value = u.id;
+    document.getElementById('editDisplayName').value = u.display_name || '';
+    document.getElementById('editRole').value = u.role;
+    document.getElementById('editCompany').value = u.company_id || '';
+    document.getElementById('modalUser').classList.add('show');
+  }
+
+  async function saveUser() {
+    const id = document.getElementById('editUserId').value;
+    const role = document.getElementById('editRole').value;
+    const company_id = document.getElementById('editCompany').value || null;
+    const btn = document.getElementById('modalUserSave');
+    btn.disabled = true; btn.textContent = '保存中...';
+    try {
+      const { error } = await sb.from('bb_users').update({ role, company_id, updated_at: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+      toast('ユーザー情報を更新しました');
+      document.getElementById('modalUser').classList.remove('show');
+      await loadUsers();
+      await loadDashboard();
+    } catch (e) {
+      toast(e.message || '更新に失敗しました', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '保存';
+    }
+  }
+
+  // ── ユーティリティ ──
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function fmtDate(s) { if (!s) return '—'; return new Date(s).toLocaleDateString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit' }); }
+  function roleBadge(r) {
+    if (r === 'super_admin') return `<span class="badge badge-super">super_admin</span>`;
+    if (r === 'company_admin') return `<span class="badge badge-company">company_admin</span>`;
+    return `<span class="badge badge-user">user</span>`;
+  }
+
+  // ── ナビゲーション ──
+  document.querySelectorAll('.nav-list a').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const sec = a.dataset.section;
+      document.querySelectorAll('.nav-list a').forEach(x => x.classList.remove('active'));
+      document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+      a.classList.add('active');
+      document.getElementById('sec-' + sec).classList.add('active');
+      // モバイルでは閉じる
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sidebarOverlay').classList.remove('show');
+    });
+  });
+
+  // ── ハンバーガー ──
+  document.getElementById('hamburger').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('show');
+  });
+  document.getElementById('sidebarOverlay').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('show');
+  });
+
+  // ── ボタンイベント ──
+  document.getElementById('btnAddCompany').addEventListener('click', openAddCompany);
+  document.getElementById('modalCompanySave').addEventListener('click', saveCompany);
+  document.getElementById('modalCompanyClose').addEventListener('click', () => document.getElementById('modalCompany').classList.remove('show'));
+  document.getElementById('modalCompanyCancel').addEventListener('click', () => document.getElementById('modalCompany').classList.remove('show'));
+  document.getElementById('modalUserSave').addEventListener('click', saveUser);
+  document.getElementById('modalUserClose').addEventListener('click', () => document.getElementById('modalUser').classList.remove('show'));
+  document.getElementById('modalUserCancel').addEventListener('click', () => document.getElementById('modalUser').classList.remove('show'));
+  document.getElementById('filterCompany').addEventListener('change', renderUsers);
+  document.getElementById('filterRole').addEventListener('change', renderUsers);
+  document.getElementById('btnLogout').addEventListener('click', async () => {
+    await sb.auth.signOut();
+    location.href = 'login.html';
+  });
+
+  init();
+</script>
+</body>
+</html>

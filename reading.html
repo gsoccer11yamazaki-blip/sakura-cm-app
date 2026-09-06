@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N3 — 読解</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #060a0f;
+      --bg-card: #0d1117;
+      --bg-surface: #161b22;
+      --border: #21262d;
+      --text-primary: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #8b5cf6;
+      --accent-light: #a78bfa;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --green: #1D9E75;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+      --nav-height: 72px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 80px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 6px 4px;
+      min-width: 44px;
+      text-decoration: none;
+    }
+
+    .header-btn:hover { color: var(--text-primary); }
+    .header-title { font-size: 1rem; font-weight: 600; }
+    .header-icon { font-size: 1.2rem; background: none; border: none; opacity: 0.5; padding: 6px; }
+
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-primary);
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px 0;
+      text-align: center;
+      font-size: 0.92rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 600;
+    }
+
+    #examSection { display: none; }
+
+    .progress-section { padding: 16px 20px 8px; }
+
+    .progress-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 4px;
+      transition: width 0.4s ease;
+    }
+
+    .progress-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+
+    .progress-label { font-size: 0.82rem; color: var(--text-muted); }
+
+    .progress-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .content-block { padding: 0 20px 16px; }
+
+    .block-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: var(--bg-surface);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    .badge.theme { color: var(--accent-light); }
+
+    .passage-box {
+      padding: 16px;
+      max-height: 220px;
+      overflow-y: auto;
+      font-size: 0.92rem;
+      line-height: 1.85;
+      white-space: pre-wrap;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .passage-box.long { max-height: 280px; }
+
+    .question-area { padding: 16px; }
+
+    .question-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-light);
+      margin-bottom: 8px;
+    }
+
+    .question-text {
+      font-size: 0.95rem;
+      line-height: 1.75;
+      margin-bottom: 12px;
+    }
+
+    .question-en {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .choices-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .choice-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.9rem;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+
+    .choice-btn.selected { border-color: var(--accent); }
+    .choice-btn.correct { background: rgba(29, 158, 117, 0.15); border-color: var(--green); color: var(--green); }
+    .choice-btn.wrong { background: rgba(239, 68, 68, 0.15); border-color: var(--red); color: var(--red); }
+    .choice-btn:disabled { cursor: default; pointer-events: none; }
+
+    .choice-num {
+      flex-shrink: 0;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+    }
+
+    .feedback-panel {
+      margin-top: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 14px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .feedback-panel.correct { border-color: rgba(29, 158, 117, 0.4); }
+    .feedback-panel.incorrect { border-color: rgba(239, 68, 68, 0.4); }
+
+    .feedback-title { font-weight: 700; margin-bottom: 6px; }
+    .feedback-title.correct { color: var(--green); }
+    .feedback-title.incorrect { color: var(--red); }
+
+    .btn-next {
+      width: 100%;
+      margin-top: 10px;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .loading-overlay,
+    .error-card {
+      margin: 20px;
+      padding: 32px 20px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .btn-retry-init {
+      padding: 10px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .practice-header { padding: 16px 20px 12px; }
+
+    .practice-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .practice-title { font-size: 1rem; font-weight: 700; }
+
+    .practice-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--amber);
+    }
+
+    .practice-body { padding: 0 20px 20px; }
+
+    .practice-result {
+      text-align: center;
+      padding: 20px 0;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .result-emoji { font-size: 2.5rem; margin-bottom: 8px; }
+    .result-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+
+    .result-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .result-label { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 20px; }
+
+    .result-bar-wrap {
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .result-bar {
+      height: 100%;
+      width: 0;
+      background: var(--accent);
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    .result-pct {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: var(--amber);
+      margin-bottom: 24px;
+    }
+
+    .btn-result-primary,
+    .btn-result-secondary {
+      width: 100%;
+      padding: 14px;
+      border-radius: var(--radius-btn);
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    .btn-result-primary { background: var(--accent); color: #fff; border: none; }
+    .btn-result-secondary { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      height: var(--nav-height);
+      display: flex;
+      background: var(--bg-card);
+      border-top: 1px solid var(--border);
+      z-index: 30;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      text-decoration: none;
+    }
+
+    .nav-item .nav-icon { font-size: 1.25rem; }
+    .nav-item.active { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <a class="header-btn" href="index.html" data-i18n="back">← 戻る</a>
+      <span class="header-title" data-i18n="title">読解</span>
+      <button class="header-icon" type="button" disabled aria-label="設定">⚙️</button>
+    </header>
+
+    <nav class="tab-bar">
+      <button class="tab active" data-tab="practice" type="button" data-i18n="tabPractice">読解練習</button>
+      <button class="tab" data-tab="exam" type="button" data-i18n="tabExam">実戦問題</button>
+    </nav>
+
+    <div id="practiceTabContent">
+      <section class="progress-section">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="practiceProgressBar"></div>
+        </div>
+        <div class="progress-bottom">
+          <span class="progress-label" id="practiceProgressLabel">読解練習</span>
+          <span class="progress-count" id="practiceProgressCount">0 / 0</span>
+        </div>
+      </section>
+
+      <div id="practiceLoading" class="loading-overlay" hidden>
+        <div class="spinner"></div>
+        <p data-i18n="loading">読み込み中...</p>
+      </div>
+
+      <div id="practiceError" class="error-card" hidden>
+        <p data-i18n="loadError">データを読み込めませんでした。再試行してください。</p>
+        <button class="btn-retry-init" type="button" onclick="init()" data-i18n="retry">再試行</button>
+      </div>
+
+      <div id="practiceMain" class="content-block">
+        <div class="block-card" id="practiceCard"></div>
+      </div>
+    </div>
+
+    <section id="examSection">
+      <div class="practice-header">
+        <div class="practice-title-row">
+          <span class="practice-title">📝 <span data-i18n="tabExam">実戦問題</span></span>
+          <span class="practice-counter" id="examCounter">0 / 0</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar" id="examProgressBar"></div>
+        </div>
+      </div>
+      <div class="practice-body">
+        <div id="examQuestionWrap"></div>
+        <div class="practice-result" id="examResult" style="display:none;"></div>
+      </div>
+    </section>
+  </div>
+
+  <nav class="bottom-nav">
+    <a class="nav-item" href="index.html"><span class="nav-icon">🏠</span><span data-i18n="navHome">ホーム</span></a>
+    <span class="nav-item active"><span class="nav-icon">📝</span><span data-i18n="navStudy">学習</span></span>
+    <button class="nav-item" type="button" onclick="alert(AppLang.st('historySoon'))"><span class="nav-icon">📊</span><span data-i18n="navHistory">履歴</span></button>
+    <button class="nav-item" type="button" data-open-settings><span class="nav-icon">⚙️</span><span data-i18n="navSettings">設定</span></button>
+  </nav>
+
+  <script src="js/app-settings.js"></script>
+  <script src="js/app-i18n-common.js"></script>
+  <script src="js/app-progress.js"></script>
+  <script>
+    const GAS_BASE = 'https://script.google.com/macros/s/AKfycbwjaswl5-q581vijF4IyQIGxAj85MTWH0b7GxIflXxSGULcKwY2K6-5ICZWYMKCMgpw2Q/exec';
+    const GAS_API_KEY = 'bb_prod_2026_xK9mN3vQ7rL8wP5j';
+    const API_LANG = () => AppLang.getApiLang();
+    const PRACTICE_PASSAGE_LIMIT = 5;
+    const EXAM_PASSAGE_LIMIT = 3;
+    const CHOICE_MARKS = ['①', '②', '③', '④'];
+
+    const i18n = AppI18n.mergeI18n({
+      ja: {
+        back: '← 戻る', title: '読解', tabPractice: '読解練習', tabExam: '実戦問題',
+        practiceLabel: '読解練習', resultTitle: '結果', resultRetry: 'もう一度挑戦する',
+        resultBack: '読解練習へ戻る', resultExamBack: '読解練習タブへ',
+        renshuu: 'れんしゅう', mondai: 'もんだい',
+      },
+      en: {
+        back: '← Back', title: 'Reading', tabPractice: 'Practice', tabExam: 'Exam',
+        practiceLabel: 'Reading practice', resultTitle: 'Results', resultRetry: 'Try again',
+        resultBack: 'Back to practice', resultExamBack: 'Back to practice tab',
+        renshuu: 'Drill', mondai: 'Problem',
+      },
+    });
+
+    const MOCK_PRACTICE = [
+      {
+        week: '第1週', day: '1日目', theme: '案内①', theme_en: 'Notice 1',
+        problem_type: 'れんしゅう',
+        passage: '女子学生：これからどうするの？ 男子学生：レポート書かないといけないから、中央図書館へ行くつもりなんだ。',
+        questions: [{
+          question_no: null,
+          question: '次の会話文を読んで、後の文から正しいものを選ぼう。',
+          question_en: 'Read the conversation and choose the correct statement.',
+          choices: [
+            '今日は祝日である。',
+            '今日、図書館は休みである。',
+            '男子学生は今日が第3月曜日だということを知らなかった。',
+            '女子学生は最初、今日は図書館が休みだと思っていた。',
+          ],
+          answer: 4,
+        }],
+      },
+    ];
+
+    const MOCK_EXAM = [
+      {
+        week: '第1週',
+        passage: '〜インターネット予約限定(※1)〜 ◎チェックイン 18:00からのお得なプラン',
+        questions: [{
+          question_no: '問1',
+          question: 'この案内の内容と合っているものはどれか。',
+          question_en: 'Choose the statement that matches the notice.',
+          choices: [
+            'この料金で泊まることができるのは、期間中の平日である。',
+            '大人1名と8歳の子どもと二人で泊まる場合は、8000円である。',
+            '前もって連絡を入れていれば、17:00にチェックインすることができる。',
+            '一人でこの部屋に泊まる場合は、二人で泊まる場合の10%割引になる。',
+          ],
+          answer: 2,
+        }],
+      },
+    ];
+
+    let apiPracticeGroups = [];
+    let apiExamRows = [];
+    let currentMainTab = 'practice';
+
+    let practiceGroups = [];
+    let practiceGroupIndex = 0;
+    let practiceQuestionIndex = 0;
+    let practiceAnswered = false;
+    let practiceScore = 0;
+    let practiceTotalQuestions = 0;
+    let practiceCurrentQuestion = 0;
+    let selectedChoice = null;
+
+    let examGroups = [];
+    let examFlatQuestions = [];
+    let examIndex = 0;
+    let examAnswered = false;
+    let examScore = 0;
+    let examTotal = 0;
+    let examSelected = null;
+
+    const t = (key) => AppLang.t(i18n, key);
+    const useEnContent = () => AppLang.isEn();
+
+    function applyI18n() {
+      AppI18n.applyI18n(i18n);
+      document.getElementById('practiceProgressLabel').textContent = t('practiceLabel');
+    }
+
+    function refreshUi() {
+      applyI18n();
+      if (currentMainTab === 'exam') {
+        if (document.getElementById('examResult').style.display === 'block') showExamResult();
+        else if (examTotal) showExamQuestion(examIndex);
+      } else if (practiceGroups.length) {
+        const resultVisible = document.getElementById('practiceCard').querySelector('.practice-result');
+        if (resultVisible) showPracticeResult();
+        else renderPracticeQuestion();
+      }
+    }
+
+    function shuffleArray(arr) {
+      const a = [...arr];
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function groupPracticeRows(rows) {
+      const map = new Map();
+      rows.forEach((row) => {
+        const key = [row.week, row.day, row.theme, row.problem_type, row.passage].join('|||');
+        if (!map.has(key)) {
+          map.set(key, {
+            week: row.week,
+            day: row.day,
+            theme: row.theme,
+            theme_en: row.theme_en || '',
+            problem_type: row.problem_type,
+            passage: row.passage,
+            questions: [],
+          });
+        }
+        map.get(key).questions.push({
+          question_no: row.question_no,
+          question: row.question,
+          question_en: row.question_en || '',
+          choices: (row.choices || []).slice(0, 4),
+          answer: row.answer,
+        });
+      });
+      return Array.from(map.values()).map((g) => {
+        g.questions.sort((a, b) => String(a.question_no || '').localeCompare(String(b.question_no || ''), 'ja'));
+        return g;
+      });
+    }
+
+    function normalizeQuestion(q) {
+      return {
+        question_no: q.question_no ?? null,
+        question: q.question || '',
+        question_en: q.question_en || '',
+        choices: (q.choices || []).slice(0, 4),
+        answer: q.answer ?? null,
+      };
+    }
+
+    function normalizePracticeGroups(data) {
+      if (!data?.length) return [];
+      if (data[0].questions) {
+        return data.map((g) => ({
+          week: g.week,
+          day: g.day,
+          theme: g.theme,
+          theme_en: g.theme_en || '',
+          problem_type: g.problem_type || '',
+          passage: g.passage || g.text || '',
+          questions: (g.questions || []).map(normalizeQuestion),
+        }));
+      }
+      return groupPracticeRows(data);
+    }
+
+    function normalizeExamGroups(data) {
+      if (!data?.length) return [];
+      if (data[0].questions) {
+        return data.map((g) => ({
+          week: g.week,
+          passage: g.passage || g.text || '',
+          questions: (g.questions || []).map(normalizeQuestion),
+        }));
+      }
+      return groupExamRows(data);
+    }
+
+    function groupExamRows(rows) {
+      const map = new Map();
+      rows.forEach((row) => {
+        const key = [row.week, row.passage].join('|||');
+        if (!map.has(key)) {
+          map.set(key, {
+            week: row.week,
+            passage: row.passage,
+            questions: [],
+          });
+        }
+        map.get(key).questions.push({
+          question_no: row.question_no,
+          question: row.question,
+          question_en: row.question_en || '',
+          choices: (row.choices || []).slice(0, 4),
+          answer: row.answer,
+        });
+      });
+      return Array.from(map.values()).map((g) => {
+        g.questions.sort((a, b) => String(a.question_no || '').localeCompare(String(b.question_no || ''), 'ja'));
+        return g;
+      });
+    }
+
+    async function fetchPracticeGroups() {
+      const url = `${GAS_BASE}?api_key=${encodeURIComponent(GAS_API_KEY)}&category=reading&type=drill&lang=${encodeURIComponent(API_LANG())}&limit=500`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.length) {
+          return normalizePracticeGroups(json.data);
+        }
+        throw new Error('empty');
+      } catch (err) {
+        console.warn('[reading] practice API fallback', err);
+        return MOCK_PRACTICE;
+      }
+    }
+
+    async function fetchExamRows() {
+      const url = `${GAS_BASE}?api_key=${encodeURIComponent(GAS_API_KEY)}&category=reading&type=exam&lang=${encodeURIComponent(API_LANG())}&limit=200`;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.length) {
+          return normalizeExamGroups(json.data);
+        }
+        throw new Error('empty');
+      } catch (err) {
+        console.warn('[reading] exam API fallback', err);
+        return MOCK_EXAM;
+      }
+    }
+
+    function showPracticeLoading() {
+      document.getElementById('practiceLoading').hidden = false;
+      document.getElementById('practiceError').hidden = true;
+      document.getElementById('practiceMain').style.display = 'none';
+    }
+
+    function hidePracticeLoading() {
+      document.getElementById('practiceLoading').hidden = true;
+      document.getElementById('practiceMain').style.display = 'block';
+    }
+
+    function showPracticeError() {
+      document.getElementById('practiceLoading').hidden = true;
+      document.getElementById('practiceMain').style.display = 'none';
+      document.getElementById('practiceError').hidden = false;
+    }
+
+    function updatePracticeProgress() {
+      const pct = practiceTotalQuestions
+        ? (practiceCurrentQuestion / practiceTotalQuestions) * 100
+        : 0;
+      document.getElementById('practiceProgressBar').style.width = pct + '%';
+      document.getElementById('practiceProgressCount').textContent =
+        `${practiceCurrentQuestion} / ${practiceTotalQuestions}`;
+    }
+
+    function renderPracticeQuestion() {
+      const group = practiceGroups[practiceGroupIndex];
+      if (!group) return;
+      const q = group.questions[practiceQuestionIndex];
+      const themeLabel = useEnContent() && group.theme_en ? group.theme_en : group.theme;
+      const typeLabel = group.problem_type === 'れんしゅう' ? t('renshuu') : t('mondai');
+      const qNo = q.question_no ? ` ${q.question_no}` : '';
+      const questionEn = useEnContent() && q.question_en
+        ? `<div class="question-en">${q.question_en}</div>` : '';
+
+      const choicesHtml = q.choices.map((c, i) => `
+        <button class="choice-btn" data-choice="${i}" type="button">
+          <span class="choice-num">${CHOICE_MARKS[i]}</span>
+          <span>${c}</span>
+        </button>
+      `).join('');
+
+      document.getElementById('practiceCard').innerHTML = `
+        <div class="badge-row">
+          <span class="badge">${group.week}</span>
+          <span class="badge">${group.day}</span>
+          <span class="badge theme">${themeLabel}</span>
+          <span class="badge">${typeLabel}</span>
+        </div>
+        <div class="passage-box">${group.passage}</div>
+        <div class="question-area">
+          <div class="question-label">${t('question')}${qNo}</div>
+          <div class="question-text">${q.question}</div>
+          ${questionEn}
+          <div class="choices-list" id="practiceChoices">${choicesHtml}</div>
+          <div id="practiceFeedback"></div>
+        </div>
+      `;
+
+      document.getElementById('practiceChoices').querySelectorAll('.choice-btn').forEach((btn) => {
+        btn.addEventListener('click', () => selectPracticeChoice(Number(btn.dataset.choice)));
+      });
+      updatePracticeProgress();
+    }
+
+    function selectPracticeChoice(index) {
+      if (practiceAnswered) return;
+      const group = practiceGroups[practiceGroupIndex];
+      const q = group.questions[practiceQuestionIndex];
+      practiceAnswered = true;
+      selectedChoice = index;
+      const hasAnswer = Number.isInteger(q.answer) && q.answer >= 1;
+      const isCorrect = hasAnswer && index + 1 === q.answer;
+      if (isCorrect) practiceScore += 1;
+
+      document.querySelectorAll('#practiceChoices .choice-btn').forEach((btn, i) => {
+        btn.disabled = true;
+        if (hasAnswer && i + 1 === q.answer) btn.classList.add('correct');
+        else if (hasAnswer && i === index) btn.classList.add('wrong');
+        else if (!hasAnswer && i === index) btn.classList.add('selected');
+      });
+
+      const feedback = document.getElementById('practiceFeedback');
+      const feedbackBody = hasAnswer
+        ? `${!isCorrect ? `<div>${t('correctAnswer')}: ${CHOICE_MARKS[q.answer - 1]} ${q.choices[q.answer - 1]}</div>` : ''}`
+        : '';
+      feedback.innerHTML = `
+        <div class="feedback-panel ${hasAnswer ? (isCorrect ? 'correct' : 'incorrect') : ''}">
+          ${hasAnswer ? `<div class="feedback-title ${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? t('correct') : t('incorrect')}</div>` : ''}
+          ${feedbackBody}
+          <button class="btn-next" id="btnPracticeNext" type="button">${t('next')}</button>
+        </div>
+      `;
+      document.getElementById('btnPracticeNext').addEventListener('click', goNextPracticeQuestion);
+    }
+
+    function goNextPracticeQuestion() {
+      practiceAnswered = false;
+      selectedChoice = null;
+      practiceCurrentQuestion += 1;
+
+      const group = practiceGroups[practiceGroupIndex];
+      if (practiceQuestionIndex < group.questions.length - 1) {
+        practiceQuestionIndex += 1;
+        renderPracticeQuestion();
+        return;
+      }
+
+      if (practiceGroupIndex < practiceGroups.length - 1) {
+        practiceGroupIndex += 1;
+        practiceQuestionIndex = 0;
+        renderPracticeQuestion();
+        return;
+      }
+
+      showPracticeResult();
+    }
+
+    function showPracticeResult() {
+      const pct = practiceTotalQuestions
+        ? Math.round((practiceScore / practiceTotalQuestions) * 100)
+        : 0;
+
+      if (practiceTotalQuestions > 0 && typeof AppProgress !== 'undefined') {
+        AppProgress.recordSession({
+          module: 'reading',
+          mode: 'practice',
+          label: t('tabPractice'),
+          score: practiceScore,
+          total: practiceTotalQuestions,
+        });
+      }
+
+      document.getElementById('practiceCard').innerHTML = `
+        <div class="practice-result">
+          <div class="result-emoji">${pct >= 70 ? '🎉' : '📖'}</div>
+          <div class="result-title">${t('resultTitle')}</div>
+          <div class="result-score">${practiceScore} / ${practiceTotalQuestions}</div>
+          <div class="result-label">${t('practiceLabel')}</div>
+          <div class="result-bar-wrap"><div class="result-bar" id="resultBar"></div></div>
+          <div class="result-pct">${pct}%</div>
+          <button class="btn-result-primary" id="btnRetryPractice" type="button">${t('resultRetry')}</button>
+        </div>
+      `;
+      requestAnimationFrame(() => {
+        document.getElementById('resultBar').style.width = pct + '%';
+      });
+      document.getElementById('btnRetryPractice').addEventListener('click', startPracticeSession);
+    }
+
+    function startPracticeSession() {
+      practiceGroups = shuffleArray(apiPracticeGroups).slice(0, PRACTICE_PASSAGE_LIMIT);
+      practiceGroupIndex = 0;
+      practiceQuestionIndex = 0;
+      practiceAnswered = false;
+      practiceScore = 0;
+      practiceCurrentQuestion = 0;
+      practiceTotalQuestions = practiceGroups.reduce((sum, g) => sum + g.questions.length, 0);
+
+      if (!practiceTotalQuestions) {
+        document.getElementById('practiceCard').innerHTML =
+          `<div class="error-card"><p>${t('noQuestions')}</p></div>`;
+        return;
+      }
+      renderPracticeQuestion();
+    }
+
+    function buildExamFlatQuestions() {
+      examFlatQuestions = [];
+      examGroups.forEach((group, gi) => {
+        group.questions.forEach((q, qi) => {
+          examFlatQuestions.push({ groupIndex: gi, questionIndex: qi, group, question: q });
+        });
+      });
+    }
+
+    function updateExamHeader() {
+      document.getElementById('examCounter').textContent = `${examIndex + 1} / ${examTotal}`;
+      const pct = examTotal ? ((examIndex + 1) / examTotal) * 100 : 0;
+      document.getElementById('examProgressBar').style.width = pct + '%';
+    }
+
+    function startExamSession() {
+      examGroups = shuffleArray(
+        Array.isArray(apiExamRows) && apiExamRows[0]?.questions
+          ? apiExamRows
+          : groupExamRows(apiExamRows)
+      ).slice(0, EXAM_PASSAGE_LIMIT);
+      buildExamFlatQuestions();
+      examTotal = examFlatQuestions.length;
+      examIndex = 0;
+      examAnswered = false;
+      examScore = 0;
+      examSelected = null;
+      document.getElementById('examQuestionWrap').style.display = 'block';
+      document.getElementById('examResult').style.display = 'none';
+
+      if (!examTotal) {
+        document.getElementById('examQuestionWrap').innerHTML =
+          `<div class="error-card"><p>${t('noQuestions')}</p></div>`;
+        return;
+      }
+      showExamQuestion(0);
+    }
+
+    function showExamQuestion(index) {
+      examIndex = index;
+      examAnswered = false;
+      examSelected = null;
+      const item = examFlatQuestions[index];
+      const { group, question: q } = item;
+      const qNo = q.question_no ? ` ${q.question_no}` : '';
+      const questionEn = useEnContent() && q.question_en
+        ? `<div class="question-en">${q.question_en}</div>` : '';
+
+      const choicesHtml = q.choices.map((c, i) => `
+        <button class="choice-btn" data-choice="${i}" type="button">
+          <span class="choice-num">${CHOICE_MARKS[i]}</span>
+          <span>${c}</span>
+        </button>
+      `).join('');
+
+      document.getElementById('examQuestionWrap').innerHTML = `
+        <div class="block-card" style="margin-bottom:14px;">
+          <div class="badge-row" style="padding:12px 16px 0;">
+            <span class="badge">${group.week}</span>
+            <span class="badge">${t('passage')}</span>
+          </div>
+          <div class="passage-box long">${group.passage}</div>
+        </div>
+        <div class="block-card">
+          <div class="question-area">
+            <div class="question-label">${t('question')}${qNo}</div>
+            <div class="question-text">${q.question}</div>
+            ${questionEn}
+            <div class="choices-list" id="examChoices">${choicesHtml}</div>
+            <div id="examFeedback"></div>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('examChoices').querySelectorAll('.choice-btn').forEach((btn) => {
+        btn.addEventListener('click', () => selectExamChoice(Number(btn.dataset.choice)));
+      });
+      updateExamHeader();
+    }
+
+    function selectExamChoice(index) {
+      if (examAnswered) return;
+      const q = examFlatQuestions[examIndex].question;
+      examAnswered = true;
+      examSelected = index;
+      const isCorrect = index + 1 === q.answer;
+      if (isCorrect) examScore += 1;
+
+      document.querySelectorAll('#examChoices .choice-btn').forEach((btn, i) => {
+        btn.disabled = true;
+        if (i + 1 === q.answer) btn.classList.add('correct');
+        else if (i === index) btn.classList.add('wrong');
+      });
+
+      const isLast = examIndex >= examTotal - 1;
+      document.getElementById('examFeedback').innerHTML = `
+        <div class="feedback-panel ${isCorrect ? 'correct' : 'incorrect'}">
+          <div class="feedback-title ${isCorrect ? 'correct' : 'incorrect'}">
+            ${isCorrect ? t('correct') : t('incorrect')}
+          </div>
+          ${!isCorrect ? `<div>${t('correctAnswer')}: ${CHOICE_MARKS[q.answer - 1]} ${q.choices[q.answer - 1]}</div>` : ''}
+          <button class="btn-next" id="btnExamNext" type="button">${isLast ? t('finish') : t('next')}</button>
+        </div>
+      `;
+      document.getElementById('btnExamNext').addEventListener('click', () => {
+        if (isLast) showExamResult();
+        else showExamQuestion(examIndex + 1);
+      });
+    }
+
+    function showExamResult() {
+      const pct = examTotal ? Math.round((examScore / examTotal) * 100) : 0;
+
+      if (examTotal > 0 && typeof AppProgress !== 'undefined') {
+        AppProgress.recordSession({
+          module: 'reading',
+          mode: 'exam',
+          label: t('tabExam'),
+          score: examScore,
+          total: examTotal,
+        });
+      }
+
+      document.getElementById('examQuestionWrap').style.display = 'none';
+      const resultEl = document.getElementById('examResult');
+      resultEl.style.display = 'block';
+      resultEl.innerHTML = `
+        <div class="result-emoji">${pct >= 70 ? '🎉' : '📖'}</div>
+        <div class="result-title">${t('resultTitle')}</div>
+        <div class="result-score">${examScore} / ${examTotal}</div>
+        <div class="result-label">${t('tabExam')}</div>
+        <div class="result-bar-wrap"><div class="result-bar" id="examResultBar"></div></div>
+        <div class="result-pct">${pct}%</div>
+        <button class="btn-result-primary" id="btnRetryExam" type="button">${t('resultRetry')}</button>
+        <button class="btn-result-secondary" id="btnBackPractice" type="button">${t('resultExamBack')}</button>
+      `;
+      requestAnimationFrame(() => {
+        document.getElementById('examResultBar').style.width = pct + '%';
+      });
+      document.getElementById('btnRetryExam').addEventListener('click', startExamSession);
+      document.getElementById('btnBackPractice').addEventListener('click', () => switchMainTab('practice'));
+    }
+
+    function switchMainTab(tab) {
+      currentMainTab = tab;
+      document.querySelectorAll('.tab').forEach((el) => {
+        el.classList.toggle('active', el.dataset.tab === tab);
+      });
+
+      const practiceTab = document.getElementById('practiceTabContent');
+      const examSection = document.getElementById('examSection');
+
+      if (tab === 'exam') {
+        practiceTab.style.display = 'none';
+        examSection.style.display = 'block';
+        startExamSession();
+      } else {
+        practiceTab.style.display = 'block';
+        examSection.style.display = 'none';
+        if (!practiceGroups.length) startPracticeSession();
+      }
+      window.scrollTo(0, 0);
+    }
+
+    async function init() {
+      showPracticeLoading();
+      applyI18n();
+      try {
+        [apiPracticeGroups, apiExamRows] = await Promise.all([
+          fetchPracticeGroups(),
+          fetchExamRows(),
+        ]);
+        if (!apiPracticeGroups.length && !apiExamRows.length) throw new Error('no data');
+        hidePracticeLoading();
+        startPracticeSession();
+      } catch (err) {
+        console.error('[reading] init error', err);
+        apiPracticeGroups = MOCK_PRACTICE;
+        apiExamRows = MOCK_EXAM;
+        hidePracticeLoading();
+        startPracticeSession();
+      }
+    }
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.tab !== currentMainTab) switchMainTab(tab.dataset.tab);
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => { applyI18n(); init(); });
+
+    window.addEventListener('app:langchange', refreshUi);
+  </script>
+</body>
+</html>
