@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>N3 — 間違い分析</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #060a0f;
+      --bg-card: #0d1117;
+      --bg-surface: #161b22;
+      --border: #21262d;
+      --text-primary: #e6edf3;
+      --text-muted: #7d8590;
+      --accent: #1D9E75;
+      --accent-light: #14b8a6;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      --radius-card: 12px;
+      --radius-btn: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .app {
+      max-width: 920px;
+      margin: 0 auto;
+      min-height: 100vh;
+      padding-bottom: 48px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      gap: 12px;
+    }
+
+    .header-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+      padding: 6px 4px;
+      min-width: 44px;
+      text-align: left;
+    }
+
+    .header-btn:hover { color: var(--text-primary); }
+
+    .header-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+      text-align: center;
+    }
+
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+
+    .icon-btn {
+      min-width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 1rem;
+    }
+
+    .icon-btn:hover { border-color: var(--accent); color: var(--accent-light); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 16px 16px 0;
+    }
+
+    .select-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 160px;
+    }
+
+    .select-wrap label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.04em;
+    }
+
+    select {
+      background: var(--bg-surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 8px 10px;
+      font-family: inherit;
+      font-size: 0.88rem;
+      outline: none;
+    }
+
+    select:focus { border-color: var(--accent); }
+
+    .updated-at {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .status {
+      margin: 16px;
+      padding: 28px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .status.error { color: #fca5a5; border-color: rgba(239, 68, 68, 0.4); }
+    .status.hidden { display: none; }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 12px;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .content { padding: 16px; display: none; }
+    .content.show { display: block; }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .kpi {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 14px 12px;
+      box-shadow: var(--shadow);
+    }
+
+    .kpi-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .kpi-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--accent-light);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-card);
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .card-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      height: 240px;
+    }
+
+    .chart-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+
+    .rate-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .rate-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 12px 8px;
+      text-align: center;
+    }
+
+    .ring {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      background: conic-gradient(var(--ring) calc(var(--pct) * 1%), var(--border) 0);
+      display: grid;
+      place-items: center;
+    }
+
+    .ring::after {
+      content: '';
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+    }
+
+    .ring-value {
+      position: absolute;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .ring-wrap {
+      position: relative;
+      display: grid;
+      place-items: center;
+      margin-bottom: 8px;
+    }
+
+    .rate-name { font-size: 0.78rem; font-weight: 600; }
+    .rate-sub { font-size: 0.68rem; color: var(--text-muted); margin-top: 2px; }
+
+    .rank-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .rank-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-btn);
+      padding: 12px;
+    }
+
+    .rank-top {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .rank-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 1.6rem;
+    }
+
+    .rank-q { flex: 1; font-size: 0.88rem; }
+
+    .rank-count {
+      background: rgba(29, 158, 117, 0.18);
+      color: var(--accent-light);
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      margin-bottom: 4px;
+    }
+
+    .badge.kanji { background: rgba(245, 158, 11, 0.18); color: var(--amber); }
+    .badge.vocab { background: rgba(29, 158, 117, 0.18); color: var(--accent-light); }
+    .badge.grammar { background: rgba(139, 92, 246, 0.18); color: #c4b5fd; }
+    .badge.reading { background: rgba(239, 68, 68, 0.18); color: #fca5a5; }
+    .badge.listening { background: rgba(59, 130, 246, 0.18); color: #93c5fd; }
+
+    .rank-meta {
+      margin-top: 8px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .rank-meta span { color: var(--text-primary); }
+
+    @media (max-width: 720px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .chart-grid { grid-template-columns: 1fr; }
+      .rate-grid { grid-template-columns: 1fr 1fr; }
+      .updated-at { margin-left: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <button class="header-btn" type="button" id="backBtn">← 戻る</button>
+      <div class="header-title">間違い分析</div>
+      <div class="header-actions">
+        <button class="icon-btn" type="button" id="refreshBtn" title="再読み込み">↻</button>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="select-wrap">
+        <label for="userFilter">受験者</label>
+        <select id="userFilter">
+          <option value="">全員</option>
+        </select>
+      </div>
+      <div class="updated-at" id="updatedAt"></div>
+    </div>
+
+    <div class="status" id="loadingStatus">
+      <div class="spinner"></div>
+      間違いノートを読み込み中...
+    </div>
+    <div class="status error hidden" id="errorStatus"></div>
+    <div class="status hidden" id="emptyStatus">間違いデータがまだありません。模擬試験を受けると、ここに分析が表示されます。</div>
+
+    <div class="content" id="content">
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">総間違い数</div>
+          <div class="kpi-value" id="kpiTotal">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">受験回数</div>
+          <div class="kpi-value" id="kpiRounds">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">重複して間違えた問題</div>
+          <div class="kpi-value" id="kpiRepeat">0</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">分野別の間違い数</div>
+        <div class="card-desc">漢字・語彙・文法・読解・聴解の累計</div>
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+
+      <div class="chart-grid">
+        <div class="card">
+          <div class="card-title">受験回別の間違い数推移</div>
+          <div class="card-desc">回を重ねるごとの間違い数</div>
+          <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">分野別の間違い構成</div>
+          <div class="card-desc">全体に占める割合</div>
+          <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">分野別の推定正答率</div>
+        <div class="card-desc">1回あたりの出題数（漢字10・語彙10・文法15・読解5・聴解10）× 受験回数から算出。満点回はシートが作られないため、実際より低めになることがあります。</div>
+        <div class="rate-grid" id="rateGrid"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">苦手問題ランキング</div>
+        <div class="card-desc">同じ問題を何度も間違えている順</div>
+        <div class="rank-list" id="rankList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const GAS_BASE = 'https://script.google.com/macros/s/AKfycbwjaswl5-q581vijF4IyQIGxAj85MTWH0b7GxIflXxSGULcKwY2K6-5ICZWYMKCMgpw2Q/exec';
+    const GAS_API_KEY = 'bb_prod_2026_xK9mN3vQ7rL8wP5j';
+    const SECTIONS = ['漢字', '語彙', '文法', '読解', '聴解'];
+    const SECTION_COLORS = {
+      '漢字': '#f59e0b',
+      '語彙': '#1D9E75',
+      '文法': '#8b5cf6',
+      '読解': '#ef4444',
+      '聴解': '#3b82f6',
+    };
+    const SECTION_CLASS = {
+      '漢字': 'kanji',
+      '語彙': 'vocab',
+      '文法': 'grammar',
+      '読解': 'reading',
+      '聴解': 'listening',
+    };
+    const QUESTIONS_PER_ROUND = {
+      '漢字': 10,
+      '語彙': 10,
+      '文法': 15,
+      '読解': 5,
+      '聴解': 10,
+    };
+
+    const chartDefaults = {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#7d8590', font: { family: 'Noto Sans JP' } } },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#7d8590' },
+          grid: { color: '#21262d' },
+        },
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#7d8590', precision: 0 },
+          grid: { color: '#21262d' },
+        },
+      },
+    };
+
+    let rawPayload = { sheets: [] };
+    let charts = { bar: null, line: null, pie: null };
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function normalizeSection(value) {
+      const s = String(value || '').trim();
+      if (SECTIONS.includes(s)) return s;
+      const map = {
+        kanji: '漢字', vocab: '語彙', grammar: '文法',
+        reading: '読解', listening: '聴解',
+      };
+      return map[s.toLowerCase()] || s || 'その他';
+    }
+
+    function showOnly(id) {
+      ['loadingStatus', 'errorStatus', 'emptyStatus'].forEach((elId) => {
+        document.getElementById(elId).classList.toggle('hidden', elId !== id);
+      });
+      document.getElementById('content').classList.toggle('show', id === 'content');
+      if (id === 'content') {
+        document.getElementById('loadingStatus').classList.add('hidden');
+        document.getElementById('errorStatus').classList.add('hidden');
+        document.getElementById('emptyStatus').classList.add('hidden');
+      }
+    }
+
+    async function fetchWithTimeout(url, timeoutMs = 25000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { signal: controller.signal, redirect: 'follow' });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    async function loadData() {
+      showOnly('loadingStatus');
+      document.getElementById('content').classList.remove('show');
+      const url = `${GAS_BASE}?action=mistake_list&apiKey=${encodeURIComponent(GAS_API_KEY)}&t=${Date.now()}`;
+      try {
+        const res = await fetchWithTimeout(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (json.status !== 'success') {
+          throw new Error(json.message || 'GAS からデータを取得できませんでした');
+        }
+        rawPayload = json;
+        fillUserFilter(json.sheets || []);
+        document.getElementById('updatedAt').textContent =
+          '更新: ' + new Date().toLocaleString('ja-JP', { hour12: false });
+        renderDashboard();
+      } catch (err) {
+        const msg = err.name === 'AbortError'
+          ? '読み込みがタイムアウトしました。GAS の再デプロイ後に再試行してください。'
+          : (err.message || String(err));
+        document.getElementById('errorStatus').textContent =
+          '読み込みに失敗しました：' + msg + '（GAS に action=mistake_list を追加して再デプロイしたか確認してください）';
+        showOnly('errorStatus');
+      }
+    }
+
+    function fillUserFilter(sheets) {
+      const select = document.getElementById('userFilter');
+      const current = select.value;
+      const names = [...new Set(sheets.map((s) => s.userName).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ja'));
+      select.innerHTML = '<option value="">全員</option>' +
+        names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+      if (names.includes(current)) select.value = current;
+    }
+
+    function filteredSheets() {
+      const user = document.getElementById('userFilter').value;
+      const sheets = rawPayload.sheets || [];
+      return user ? sheets.filter((s) => s.userName === user) : sheets;
+    }
+
+    function destroyCharts() {
+      Object.keys(charts).forEach((key) => {
+        if (charts[key]) {
+          charts[key].destroy();
+          charts[key] = null;
+        }
+      });
+    }
+
+    function renderDashboard() {
+      const sheets = filteredSheets();
+      const mistakes = sheets.flatMap((s) => (s.mistakes || []).map((m) => ({
+        ...m,
+        section: normalizeSection(m.section),
+        round: s.round,
+        userName: s.userName,
+        sheetName: s.sheetName,
+      })));
+
+      if (!mistakes.length) {
+        destroyCharts();
+        showOnly('emptyStatus');
+        return;
+      }
+
+      showOnly('content');
+      document.getElementById('content').classList.add('show');
+
+      const extraSections = [...new Set(mistakes.map((m) => m.section).filter((s) => !SECTIONS.includes(s)))];
+      const chartSections = [...SECTIONS, ...extraSections];
+      const bySection = Object.fromEntries(chartSections.map((s) => [s, 0]));
+      mistakes.forEach((m) => {
+        bySection[m.section] = (bySection[m.section] || 0) + 1;
+      });
+
+      const roundMap = new Map();
+      sheets.forEach((s) => {
+        const label = s.round ? `第${s.round}回` : (s.sheetName || '不明');
+        roundMap.set(label, (roundMap.get(label) || 0) + (s.count || (s.mistakes || []).length));
+      });
+      const roundLabels = [...roundMap.keys()];
+      const roundValues = roundLabels.map((k) => roundMap.get(k));
+
+      const grouped = new Map();
+      mistakes.forEach((m) => {
+        const key = `${m.section}|||${(m.question || '').replace(/\s+/g, ' ').trim()}`;
+        if (!m.question) return;
+        if (!grouped.has(key)) {
+          grouped.set(key, { ...m, count: 0 });
+        }
+        grouped.get(key).count += 1;
+      });
+      const ranking = [...grouped.values()].sort((a, b) => b.count - a.count || a.question.localeCompare(b.question, 'ja'));
+      const repeats = ranking.filter((r) => r.count >= 2).length;
+
+      document.getElementById('kpiTotal').textContent = String(mistakes.length);
+      document.getElementById('kpiRounds').textContent = String(sheets.length);
+      document.getElementById('kpiRepeat').textContent = String(repeats);
+
+      destroyCharts();
+      if (typeof Chart === 'undefined') {
+        document.getElementById('errorStatus').textContent = 'グラフ用ライブラリの読み込みに失敗しました。ネットワークを確認して再読み込みしてください。';
+        showOnly('errorStatus');
+        return;
+      }
+      const barCtx = document.getElementById('barChart');
+      const lineCtx = document.getElementById('lineChart');
+      const pieCtx = document.getElementById('pieChart');
+
+      charts.bar = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: chartSections,
+          datasets: [{
+            label: '間違い数',
+            data: chartSections.map((s) => bySection[s]),
+            backgroundColor: chartSections.map((s) => SECTION_COLORS[s] || '#7d8590'),
+            borderRadius: 6,
+          }],
+        },
+        options: { ...chartDefaults, plugins: { legend: { display: false } } },
+      });
+
+      charts.line = new Chart(lineCtx, {
+        type: 'line',
+        data: {
+          labels: roundLabels,
+          datasets: [{
+            label: '間違い数',
+            data: roundValues,
+            borderColor: '#1D9E75',
+            backgroundColor: 'rgba(29, 158, 117, 0.18)',
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: '#14b8a6',
+            pointRadius: 4,
+          }],
+        },
+        options: chartDefaults,
+      });
+
+      charts.pie = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: chartSections,
+          datasets: [{
+            data: chartSections.map((s) => bySection[s]),
+            backgroundColor: chartSections.map((s) => SECTION_COLORS[s] || '#7d8590'),
+            borderColor: '#0d1117',
+            borderWidth: 2,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { color: '#7d8590', boxWidth: 12 } },
+          },
+        },
+      });
+
+      const roundCount = Math.max(sheets.length, 1);
+      document.getElementById('rateGrid').innerHTML = SECTIONS.map((section) => {
+        const expected = QUESTIONS_PER_ROUND[section] * roundCount;
+        const wrong = bySection[section];
+        const correct = Math.max(0, expected - wrong);
+        const pct = expected ? Math.round((correct / expected) * 100) : 0;
+        return `
+          <div class="rate-item">
+            <div class="ring-wrap">
+              <div class="ring" style="--pct:${pct}; --ring:${SECTION_COLORS[section]}"></div>
+              <div class="ring-value">${pct}%</div>
+            </div>
+            <div class="rate-name">${section}</div>
+            <div class="rate-sub">${correct}/${expected}問</div>
+          </div>
+        `;
+      }).join('');
+
+      const top = ranking.slice(0, 12);
+      document.getElementById('rankList').innerHTML = top.length
+        ? top.map((item, i) => `
+            <div class="rank-item">
+              <div class="rank-top">
+                <div class="rank-num">${i + 1}</div>
+                <div class="rank-q">
+                  <span class="badge ${SECTION_CLASS[item.section] || ''}">${escapeHtml(item.section)}</span>
+                  <div>${escapeHtml(item.question)}</div>
+                  <div class="rank-meta">
+                    正解: <span>${escapeHtml(item.correct)}</span>
+                    ／ 回答: <span>${escapeHtml(item.yours)}</span>
+                  </div>
+                </div>
+                <div class="rank-count">${item.count}回</div>
+              </div>
+            </div>
+          `).join('')
+        : '<div class="rank-meta">ランキング対象の問題がありません。</div>';
+    }
+
+    document.getElementById('backBtn').addEventListener('click', () => {
+      location.href = 'home.html';
+    });
+    document.getElementById('refreshBtn').addEventListener('click', loadData);
+    document.getElementById('userFilter').addEventListener('change', renderDashboard);
+
+    loadData();
+  </script>
+</body>
+</html>
