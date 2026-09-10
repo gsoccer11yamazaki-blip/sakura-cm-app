@@ -341,7 +341,7 @@
 <body>
   <div class="app">
     <header class="header">
-      <button class="header-btn" type="button" id="backBtn">← 戻る</button>
+      
       <div class="header-title">間違い分析</div>
       <div class="header-actions">
         <button class="icon-btn" type="button" id="refreshBtn" title="再読み込み">↻</button>
@@ -702,10 +702,7 @@
           `).join('')
         : '<div class="rank-meta">ランキング対象の問題がありません。</div>';
     }
-
-    document.getElementById('backBtn').addEventListener('click', () => {
-      location.href = 'home.html';
-    });
+});
     document.getElementById('refreshBtn').addEventListener('click', loadData);
     document.getElementById('userFilter').addEventListener('change', renderDashboard);
 
